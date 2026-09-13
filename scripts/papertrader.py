@@ -178,10 +178,17 @@ def settle_positions(state, res_cache):
 def main():
     state = load_state()
     seen = set(state.get("seen_leader_keys", []))
+    # primera vez que este proceso arranca (nunca vio nada) -> el primer poll
+    # trae hasta 100 trades VIEJOS de la wallet, no detecciones en tiempo
+    # real. Los marcamos como vistos sin copiarlos, para no ensuciar las
+    # metricas de demora ni abrir posiciones de papel con precios ya
+    # obsoletos. Si el proceso se reinicia con seen_leader_keys ya poblado,
+    # esto no aplica - sigue copiando normal.
+    warm_start = len(seen) == 0
     res_cache = {}
     last_resolve_check = 0
     log(f"iniciando - cash actual=${state['cash']:.2f} (arranco con ${state['start_cash']:.2f}) "
-        f"posiciones abiertas={len(state['open_positions'])}")
+        f"posiciones abiertas={len(state['open_positions'])} warm_start={warm_start}")
 
     while True:
         try:
@@ -194,7 +201,12 @@ def main():
                 if key in seen:
                     continue
                 seen.add(key)
+                if warm_start:
+                    continue  # solo sembramos "ya visto", no copiamos historial
                 process_new_trade(t, state, now)
+            if warm_start:
+                log(f"warm start: se sembraron {len(seen)} trades existentes sin copiar, arrancando a detectar desde aca")
+            warm_start = False
             state["seen_leader_keys"] = list(seen)[-3000:]
         except Exception as e:
             log(f"error polling trades: {e}")
