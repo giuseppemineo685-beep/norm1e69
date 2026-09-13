@@ -1,72 +1,7 @@
 {
-  "cash": 445.6111710630993,
+  "cash": 457.04455876363403,
   "start_cash": 600.0,
   "open_positions": [
-    {
-      "conditionId": "0xfcea098cefd73caaa788a3d6a1890208fb86e0664415153923ad7f13b38f4eef",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 13, 7:20PM-7:25PM ET",
-      "cost": 3.525,
-      "shares": 7.05,
-      "price_paid": 0.5,
-      "leader_price": 0.47,
-      "leader_cost": 23.5,
-      "leader_tx": "0xed6da702e58bf2178a5d6041b5c3f6f566c25fb0fe40a82448a8c8ff2c00851a",
-      "delay_s": 58.712493658065796,
-      "opened_at": 1789341670.7124937
-    },
-    {
-      "conditionId": "0xfcea098cefd73caaa788a3d6a1890208fb86e0664415153923ad7f13b38f4eef",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 13, 7:20PM-7:25PM ET",
-      "cost": 4.2,
-      "shares": 8.4,
-      "price_paid": 0.5,
-      "leader_price": 0.56,
-      "leader_cost": 28.000000000000004,
-      "leader_tx": "0xaf04b39ca643e0d2c6df6bf3aa6e515cfee7911eeb8b67e0e3bd2482d2eb2bb2",
-      "delay_s": 27.712493658065796,
-      "opened_at": 1789341670.7124937
-    },
-    {
-      "conditionId": "0xfcea098cefd73caaa788a3d6a1890208fb86e0664415153923ad7f13b38f4eef",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 7:20PM-7:25PM ET",
-      "cost": 3.4499999999999997,
-      "shares": 6.76470588235294,
-      "price_paid": 0.51,
-      "leader_price": 0.46,
-      "leader_cost": 23.0,
-      "leader_tx": "0xd8241d555ac8325dcb57d8d0f3c8a78205b273c07d090da64cb27a95cfb6af79",
-      "delay_s": 4.712493658065796,
-      "opened_at": 1789341670.7124937
-    },
-    {
-      "conditionId": "0xfcea098cefd73caaa788a3d6a1890208fb86e0664415153923ad7f13b38f4eef",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 7:20PM-7:25PM ET",
-      "cost": 3.5948850000000006,
-      "shares": 4.668681818181819,
-      "price_paid": 0.77,
-      "leader_price": 0.67,
-      "leader_cost": 23.965900000000005,
-      "leader_tx": "0x6ee12c48b82c826584e24670425a533afb6dda69962263ef8e209b953385ae8c",
-      "delay_s": 294.0241713523865,
-      "opened_at": 1789341972.0241714
-    },
-    {
-      "conditionId": "0xfcea098cefd73caaa788a3d6a1890208fb86e0664415153923ad7f13b38f4eef",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 13, 7:20PM-7:25PM ET",
-      "cost": 3.15,
-      "shares": 13.125,
-      "price_paid": 0.24,
-      "leader_price": 0.42,
-      "leader_cost": 21.0,
-      "leader_tx": "0x8ca618fca253a36e2274d077e529a6f64c3a1061709614569c64b63303cff655",
-      "delay_s": 275.0241713523865,
-      "opened_at": 1789341972.0241714
-    },
     {
       "conditionId": "0x02de146ad0115a8ce96facfc5e3f78b09eafe80d2dcffcc4cbcf55a48a253a96",
       "outcome": "Up",
