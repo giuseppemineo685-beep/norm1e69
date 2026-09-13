@@ -1,0 +1,13 @@
+{
+  "cash": 600.0,
+  "start_cash": 600.0,
+  "open_positions": [],
+  "seen_leader_keys": [],
+  "started_at": 1789337249.4605,
+  "n_detected": 0,
+  "n_copied": 0,
+  "n_skipped_conviction": 0,
+  "n_skipped_min": 0,
+  "n_skipped_cash": 0,
+  "delays_measured": []
+}

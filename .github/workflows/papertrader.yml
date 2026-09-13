@@ -1,0 +1,29 @@
+name: Polycool Strategy Paper Trader
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: polycool-strategy-papertrader
+  cancel-in-progress: false
+
+jobs:
+  papertrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run paper trader + auto-publish for ~5h40m
+        run: bash scripts/run_bounded.sh 20400
