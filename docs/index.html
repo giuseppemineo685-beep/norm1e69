@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polycool Strategy</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --paper: #f6f3ec; --ink: #1b1d22; --ash: #6b6455; --line: #e2ddd0; --surface: #ffffff;
+  --accent: #2f6fb0; --accent-soft: rgba(47,111,176,0.12);
+  --good: #2f8a5b; --good-soft: rgba(47,138,91,0.12);
+  --bad: #b8404f; --bad-soft: rgba(184,64,79,0.12);
+  --pending: #8a8272; --pending-soft: rgba(138,130,114,0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14161a; --ink: #ece7db; --ash: #a39a86; --line: #2c2d33; --surface: #1d1e24;
+    --accent: #6fa8dc; --accent-soft: rgba(111,168,220,0.16);
+    --good: #4cb583; --good-soft: rgba(76,181,131,0.14);
+    --bad: #e0687a; --bad-soft: rgba(224,104,122,0.14);
+    --pending: #9a9282; --pending-soft: rgba(154,146,130,0.16);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14161a; --ink: #ece7db; --ash: #a39a86; --line: #2c2d33; --surface: #1d1e24;
+  --accent: #6fa8dc; --accent-soft: rgba(111,168,220,0.16);
+  --good: #4cb583; --good-soft: rgba(76,181,131,0.14);
+  --bad: #e0687a; --bad-soft: rgba(224,104,122,0.14);
+  --pending: #9a9282; --pending-soft: rgba(154,146,130,0.16);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; }
+.mono-sm { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.85em; }
+h1, h2 { font-family: 'Fraunces', Georgia, serif; text-wrap: balance; margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+.masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.masthead h1 { font-size: 1.65rem; font-weight: 600; }
+.wallet-addr { color: var(--ash); font-size: 0.8rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 500; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.pending { background: var(--pending-soft); color: var(--pending); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.updated { color: var(--ash); font-size: 0.78rem; }
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+.stat-tile { background: var(--surface); padding: 16px 18px; }
+.stat-tile .label { color: var(--ash); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-tile .value { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
+.stat-tile .value.good { color: var(--good); }
+.stat-tile .value.bad { color: var(--bad); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; }
+.card h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+.card .sub { color: var(--ash); font-size: 0.82rem; margin-bottom: 16px; }
+.muted { color: var(--ash); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { text-align: left; color: var(--ash); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+td.num { font-family: 'IBM Plex Mono', monospace; text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { overflow-x: auto; }
+.banner { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--accent); margin-bottom: 20px; font-size: 0.86rem; }
+.banner b { color: var(--accent); }
+footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>Polycool Strategy</h1>
+      <span class="wallet-addr mono-sm">copiando 0x3048d6&hellip;2e7537 &middot; alias &ldquo;x-MoneyForWhiskas&rdquo;</span>
+    </div>
+    <div>
+      <span class="pill accent"><span class="pill-dot"></span> papel</span>
+      <span class="updated">actualizado 2026-09-13 22:09:47 UTC</span>
+    </div>
+  </div>
+
+  <div class="banner">
+    <span>&#128203;</span>
+    <div><b>100% papel, cero plata real.</b> Simula copiar solo las operaciones de esta wallet con costo &ge;$20,
+    mirror 15%, tope $10/trade, capital inicial $600. Sin el 1% de fee de Polycool. La demora y el precio de llenado
+    se miden en tiempo real, no se asumen.</div>
+  </div>
+
+  <div class="stat-strip">
+    <div class="stat-tile"><div class="label">Cash + en posiciones</div><div class="value bad">$596.09</div></div>
+    <div class="stat-tile"><div class="label">Capital inicial</div><div class="value">$600.00</div></div>
+    <div class="stat-tile"><div class="label">Retorno</div><div class="value bad">-0.65%</div></div>
+    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">95.2%</div></div>
+    <div class="stat-tile"><div class="label">Horas corriendo</div><div class="value">0.0h</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Demora real medida</h2>
+    <div class="sub">Segundos entre que ella compra y que nuestro monitor la detecta (no asumido, medido en cada trade).</div>
+    <div class="mono-sm">prom 1534.4s · mediana 1379.7s · p90 2795.7s · máx 2923.7s</div>
+  </div>
+
+  <div class="card">
+    <h2>Embudo de filtrado</h2>
+    <div class="sub">De cada trade suyo detectado, cuántos pasan el filtro de convicción y el mínimo de Polymarket.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Detectados</th><th>Copiados</th><th>Bajo $20 (sin convicción)</th><th>Bajo $1 (mínimo Polymarket)</th><th>Sin efectivo</th></tr>
+      <tr>
+        <td class="num">100</td>
+        <td class="num">31</td>
+        <td class="num">69</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Posiciones abiertas (10)</h2>
+    <table><tr><th>Mercado</th><th>Lado</th><th>Costo</th><th>Precio</th><th>Demora</th></tr><tr>
+          <td>Bitcoin Up or Down - September 13, 5:55PM-6:00PM ET</td>
+          <td>Up</td>
+          <td class="num">4.50</td>
+          <td class="num">0.010</td>
+          <td class="num">698.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 5:55PM-6:00PM ET</td>
+          <td>Down</td>
+          <td class="num">3.75</td>
+          <td class="num">0.990</td>
+          <td class="num">676.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Up</td>
+          <td class="num">3.52</td>
+          <td class="num">0.330</td>
+          <td class="num">223.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Down</td>
+          <td class="num">3.67</td>
+          <td class="num">0.680</td>
+          <td class="num">221.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Up</td>
+          <td class="num">3.90</td>
+          <td class="num">0.330</td>
+          <td class="num">221.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Down</td>
+          <td class="num">3.60</td>
+          <td class="num">0.680</td>
+          <td class="num">220.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Down</td>
+          <td class="num">3.30</td>
+          <td class="num">0.680</td>
+          <td class="num">217.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Up</td>
+          <td class="num">3.67</td>
+          <td class="num">0.330</td>
+          <td class="num">212.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Up</td>
+          <td class="num">4.26</td>
+          <td class="num">0.330</td>
+          <td class="num">203.7s</td>
+        </tr><tr>
+          <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+          <td>Up</td>
+          <td class="num">4.88</td>
+          <td class="num">0.330</td>
+          <td class="num">199.7s</td>
+        </tr></table>
+  </div>
+
+  <div class="card">
+    <h2>Actividad reciente</h2>
+    <div class="sub">Últimos 40 eventos (aperturas y cierres), más reciente primero.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Precio</th><th>Demora</th><th>Estado</th></tr>
+      <tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.35</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.04)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.42</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.04)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.32</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.04)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">3.90</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.04)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Up</td>
+              <td class="num">4.35</td>
+              <td class="num">0.010</td>
+              <td class="num">—</td>
+              <td class="pill bad">perdió ($-4.35)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">3.00</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.03)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:35PM-5:40PM ET</td>
+              <td>Down</td>
+              <td class="num">6.28</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">3.26</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.00)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">5.77</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">5.47</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">5.17</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">4.44</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.00)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:51 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">3.29</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.00)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:25PM-5:30PM ET</td>
+              <td>Down</td>
+              <td class="num">5.62</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.06)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:25PM-5:30PM ET</td>
+              <td>Down</td>
+              <td class="num">6.22</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.06)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:25PM-5:30PM ET</td>
+              <td>Down</td>
+              <td class="num">3.28</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.03)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:25PM-5:30PM ET</td>
+              <td>Down</td>
+              <td class="num">3.38</td>
+              <td class="num">0.990</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.03)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:20PM-5:25PM ET</td>
+              <td>Up</td>
+              <td class="num">6.08</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:20PM-5:25PM ET</td>
+              <td>Up</td>
+              <td class="num">6.08</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:20PM-5:25PM ET</td>
+              <td>Up</td>
+              <td class="num">5.25</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.01)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:50 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:20PM-5:25PM ET</td>
+              <td>Up</td>
+              <td class="num">3.23</td>
+              <td class="num">0.999</td>
+              <td class="num">—</td>
+              <td class="pill good">ganó ($+0.00)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Up</td>
+              <td class="num">4.88</td>
+              <td class="num">0.330</td>
+              <td class="num">199.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Up</td>
+              <td class="num">4.26</td>
+              <td class="num">0.330</td>
+              <td class="num">203.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Up</td>
+              <td class="num">3.67</td>
+              <td class="num">0.330</td>
+              <td class="num">212.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Down</td>
+              <td class="num">3.30</td>
+              <td class="num">0.680</td>
+              <td class="num">217.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Down</td>
+              <td class="num">3.60</td>
+              <td class="num">0.680</td>
+              <td class="num">220.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Up</td>
+              <td class="num">3.90</td>
+              <td class="num">0.330</td>
+              <td class="num">221.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Down</td>
+              <td class="num">3.67</td>
+              <td class="num">0.680</td>
+              <td class="num">221.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 6:05PM-6:10PM ET</td>
+              <td>Up</td>
+              <td class="num">3.52</td>
+              <td class="num">0.330</td>
+              <td class="num">223.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:55PM-6:00PM ET</td>
+              <td>Down</td>
+              <td class="num">3.75</td>
+              <td class="num">0.990</td>
+              <td class="num">676.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:55PM-6:00PM ET</td>
+              <td>Up</td>
+              <td class="num">4.50</td>
+              <td class="num">0.010</td>
+              <td class="num">698.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.35</td>
+              <td class="num">0.990</td>
+              <td class="num">1238.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.42</td>
+              <td class="num">0.990</td>
+              <td class="num">1238.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">4.32</td>
+              <td class="num">0.990</td>
+              <td class="num">1238.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">3.90</td>
+              <td class="num">0.990</td>
+              <td class="num">1244.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Up</td>
+              <td class="num">4.35</td>
+              <td class="num">0.010</td>
+              <td class="num">1309.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:45PM-5:50PM ET</td>
+              <td>Down</td>
+              <td class="num">3.00</td>
+              <td class="num">0.990</td>
+              <td class="num">1379.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:35PM-5:40PM ET</td>
+              <td>Down</td>
+              <td class="num">6.28</td>
+              <td class="num">0.999</td>
+              <td class="num">1919.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">3.26</td>
+              <td class="num">0.999</td>
+              <td class="num">2143.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-13 22:08:47 UTC</td>
+              <td>Bitcoin Up or Down - September 13, 5:30PM-5:35PM ET</td>
+              <td>Down</td>
+              <td class="num">5.77</td>
+              <td class="num">0.999</td>
+              <td class="num">2174.7s</td>
+              <td class="pill pending">abierta</td>
+            </tr>
+    </table>
+    </div>
+  </div>
+
+  <footer>
+    Nuestro propio sistema de copy-trading en papel &mdash; no es Polycool, no cobra 1% por trade.
+    Generado por <code class="mono-sm">scripts/generate_dashboard.py</code>.
+  </footer>
+
+</div>
+</body>
+</html>
