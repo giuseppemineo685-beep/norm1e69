@@ -2497,14 +2497,6 @@
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 2 Winner"
     },
-    "0x67fdd6bbad58b86e37cc2ab95c730c510953795ec6fc0b512e8eb6fc419ffcc3": {
-      "shares": {
-        "Up": 50.0,
-        "Down": 0.0
-      },
-      "cost": 1.0,
-      "title": "Ethereum Up or Down - September 14, 11:55AM-12:00PM ET"
-    },
     "0xbb473fb5c5918730c6a3fb572dcb81146aee6995663a5e17d78d1cad0b0c60be": {
       "shares": {
         "Up": 30.11594202898551,
@@ -2558,14 +2550,6 @@
   "paper_b_cash": 2052.7482550014224,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x67fdd6bbad58b86e37cc2ab95c730c510953795ec6fc0b512e8eb6fc419ffcc3": {
-      "shares": {
-        "Up": 50.0,
-        "Down": 0.0
-      },
-      "cost": 1.0,
-      "title": "Ethereum Up or Down - September 14, 11:55AM-12:00PM ET"
-    },
     "0xab4e756a6b240b46f031e8bdf26398effb61bf5b9365d171004b0f68f850999b": {
       "shares": {
         "Up": 4.285714285714286,
