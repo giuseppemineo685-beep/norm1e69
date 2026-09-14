@@ -3015,7 +3015,7 @@
     1.3502695560455322,
     1.3502695560455322
   ],
-  "paper_cash": 2765.9216496165063,
+  "paper_cash": 2852.5900907849473,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3049,14 +3049,6 @@
       },
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 3 Winner"
-    },
-    "0x44a23c004514a38a37a1958c56833f391036401ba75e67f4d66484f8393523e5": {
-      "shares": {
-        "Down": 86.66844116844116,
-        "Up": 200.19230769230768
-      },
-      "cost": 102.12,
-      "title": "Ethereum Up or Down - September 14, 12:40PM-12:45PM ET"
     },
     "0x9f30a79754a1e6a66776737b34464ad744b3535cdccbe5c3dd314ef4d9ce0997": {
       "shares": {
@@ -3116,17 +3108,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 1701.8657379438598,
+  "paper_b_cash": 1782.7233683014902,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x44a23c004514a38a37a1958c56833f391036401ba75e67f4d66484f8393523e5": {
-      "shares": {
-        "Up": 179.4230769230769,
-        "Down": 80.85763035763037
-      },
-      "cost": 92.42000000000002,
-      "title": "Ethereum Up or Down - September 14, 12:40PM-12:45PM ET"
-    },
     "0x9f30a79754a1e6a66776737b34464ad744b3535cdccbe5c3dd314ef4d9ce0997": {
       "shares": {
         "Down": 4.811320754716981
