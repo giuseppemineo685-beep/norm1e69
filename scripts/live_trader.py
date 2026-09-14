@@ -82,7 +82,7 @@ PAPER_START_CASH = float(os.environ.get("PAPER_START_CASH", "2500.0"))
 _cap_env = os.environ.get("LIVE_MAX_TOTAL_CAPITAL")
 LIVE_MAX_TOTAL_CAPITAL = float(_cap_env) if _cap_env else float("inf")
 
-LIVE = os.environ.get("LIVE") == "1"
+LIVE = (os.environ.get("LIVE") or "").strip().lower() in ("1", "true", "yes")
 PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY") or None
 FUNDER = os.environ.get("POLY_FUNDER") or None  # direccion que tiene los fondos en Polymarket
 SIGNATURE_TYPE = int(os.environ.get("POLY_SIGNATURE_TYPE") or "1")  # 1=email/Magic wallet, 0=MetaMask/hardware
