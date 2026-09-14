@@ -7,9 +7,19 @@ filtro de conviccion que la app no ofrece.
 
 Reglas (validadas por backtest sobre ~50h reales, ver README):
 - Solo copia si SU trade individual costo >= LEADER_MIN_TRADE (conviccion)
-- Mirror MIRROR_PCT de ese costo, con tope MAX_PER_TRADE
-- Nunca opera si el trade quedaria por debajo de POLY_MIN_TRADE ($1, el
+- Por cada mercado (Up+Down juntos) mantenemos SU proporcion real entre los
+  dos lados, aplicando MIRROR_PCT al total y un tope MAX_MARKET_TOTAL al
+  TOTAL del mercado (no un tope independiente por lado). Cada trade nuevo de
+  ella actualiza cuanto lleva invertido en cada lado y recalculamos cuanto
+  nos falta agregar de este lado para seguir esa misma proporcion.
+  (2026-09-14: se encontro y corrigio un bug donde el tope viejo se aplicaba
+  por lado por separado, lo que aplastaba apuestas muy asimetricas tipo
+  87%/13% en casi 50/50 para nosotros - causo una perdida real de ~$40.
+  Ver README para el detalle del bug y la validacion del arreglo.)
+- Nunca opera si el incremento quedaria por debajo de POLY_MIN_TRADE ($1, el
   minimo real de Polymarket) o si no alcanza el efectivo disponible
+- El precio de entrada de cada posicion es un promedio ponderado de todos
+  los incrementos que se le fueron agregando, no el precio de un solo trade
 - Arranca con START_CASH de capital en PAPEL (nada de plata real todavia)
 
 Demora: NO se asume un numero fijo. Cada vez que detectamos un trade suyo
@@ -27,7 +37,11 @@ from pathlib import Path
 WALLET = "0x3048d65321be3497164cdfc2996f94f98a2e7537"
 LEADER_MIN_TRADE = 20.0
 MIRROR_PCT = 0.15
-MAX_PER_TRADE = 10.0
+MAX_MARKET_TOTAL = 20.0  # tope al TOTAL del mercado (ambos lados juntos), no por lado -
+# el tope viejo "MAX_PER_TRADE por lado" aplastaba el lado fuerte pero no el
+# debil, convirtiendo apuestas 87%/13% en casi 50/50. Validado contra datos
+# reales del 2026-09-14: -17% a -21% con tope por lado, -5% con tope total
+# preservando la proporcion (mas cerca de su +3.5% real).
 MAX_SLIPPAGE = 0.10  # 10 centavos - misma guardia configurada en la cuenta real de Polycool
 POLY_MIN_TRADE = 1.0
 START_CASH = 600.0
@@ -66,6 +80,7 @@ def load_state():
         "cash": START_CASH,
         "start_cash": START_CASH,
         "open_positions": [],  # [{conditionId, outcome, cost, shares, price_paid, leader_tx, opened_at}]
+        "leader_state": {},  # {conditionId: {"Up": costo_acumulado_de_ella, "Down": costo_acumulado_de_ella}}
         "seen_leader_keys": [],
         "started_at": time.time(),
         "n_detected": 0,
@@ -120,7 +135,20 @@ def get_resolution(condition_id, cache):
         return None
 
 
+def get_position(state, condition_id, outcome):
+    for p in state["open_positions"]:
+        if p["conditionId"] == condition_id and p["outcome"] == outcome:
+            return p
+    return None
+
+
 def process_new_trade(t, state, now):
+    """Cada trade nuevo de ella actualiza cuanto lleva invertido en CADA lado
+    de este mercado (leader_state), y recalculamos el objetivo proporcional
+    completo para el lado que acaba de mover - preservando su ratio real
+    Up/Down con un tope al TOTAL del mercado, no un tope independiente por
+    lado. Solo compramos la DIFERENCIA entre ese objetivo y lo que ya
+    tenemos invertido en ese lado (nunca vendemos en este sistema de papel)."""
     leader_cost = t["size"] * t["price"]
     state["n_detected"] += 1
 
@@ -131,20 +159,39 @@ def process_new_trade(t, state, now):
     delay = now - t["timestamp"]
     state["delays_measured"] = (state["delays_measured"] + [delay])[-500:]
 
-    fill_price = current_market_price(t["conditionId"], t["outcome"])
+    condition_id = t["conditionId"]
+    outcome = t["outcome"]
+
+    fill_price = current_market_price(condition_id, outcome)
     if fill_price is None:
         fill_price = t["price"]  # ultimo recurso si no hay trades recientes visibles
 
     if abs(fill_price - t["price"]) > MAX_SLIPPAGE:
         state["n_skipped_slippage"] = state.get("n_skipped_slippage", 0) + 1
         log(
-            f"SALTEADO por slippage  {t.get('title','')[:40]:40s} {t['outcome']:5s} "
+            f"SALTEADO por slippage  {t.get('title','')[:40]:40s} {outcome:5s} "
             f"lider@{t['price']:.3f} ahora@{fill_price:.3f} (mov>{MAX_SLIPPAGE:.2f})"
         )
         return
 
-    copy_cost = min(leader_cost * MIRROR_PCT, MAX_PER_TRADE)
+    # cuanto lleva invertido ELLA en cada lado de este mercado hasta ahora
+    leader_state = state.setdefault("leader_state", {})
+    m = leader_state.setdefault(condition_id, {"Up": 0.0, "Down": 0.0})
+    m[outcome] = m.get(outcome, 0.0) + leader_cost
+    her_total = m["Up"] + m["Down"]
+
+    # tope al TOTAL de ambos lados en este mercado, preservando su proporcion real
+    target_total = min(her_total * MIRROR_PCT, MAX_MARKET_TOTAL)
+    target_this_side = target_total * (m[outcome] / her_total) if her_total > 0 else 0.0
+
+    existing = get_position(state, condition_id, outcome)
+    our_cost_so_far = existing["cost"] if existing else 0.0
+    copy_cost = target_this_side - our_cost_so_far
+
     if copy_cost < POLY_MIN_TRADE:
+        # ya estamos al objetivo proporcional de este lado (o el incremento
+        # es demasiado chico para el minimo real de Polymarket) - no hay
+        # nada nuevo que agregar todavia, no es un error
         state["n_skipped_min"] += 1
         return
     if copy_cost > state["cash"]:
@@ -154,25 +201,43 @@ def process_new_trade(t, state, now):
     shares = copy_cost / fill_price
     state["cash"] -= copy_cost
     state["n_copied"] += 1
-    state["open_positions"].append({
-        "conditionId": t["conditionId"],
-        "outcome": t["outcome"],
-        "market_title": t.get("title"),
-        "cost": copy_cost,
-        "shares": shares,
-        "price_paid": fill_price,
-        "leader_price": t["price"],
-        "leader_cost": leader_cost,
-        "leader_tx": t["transactionHash"],
-        "delay_s": delay,
-        "opened_at": now,
-    })
+
+    if existing:
+        new_cost = existing["cost"] + copy_cost
+        new_shares = existing["shares"] + shares
+        existing["price_paid"] = new_cost / new_shares  # promedio ponderado
+        existing["cost"] = new_cost
+        existing["shares"] = new_shares
+        existing["leader_price"] = t["price"]
+        existing["leader_cost"] = m[outcome]
+        existing["delay_s"] = delay
+        existing["last_updated"] = now
+        pos_rec = existing
+    else:
+        pos_rec = {
+            "conditionId": condition_id,
+            "outcome": outcome,
+            "market_title": t.get("title"),
+            "cost": copy_cost,
+            "shares": shares,
+            "price_paid": fill_price,
+            "leader_price": t["price"],
+            "leader_cost": m[outcome],
+            "leader_tx": t["transactionHash"],
+            "delay_s": delay,
+            "opened_at": now,
+            "last_updated": now,
+        }
+        state["open_positions"].append(pos_rec)
+
+    her_pct = (m[outcome] / her_total * 100) if her_total else 0.0
     log(
-        f"COPIA  {t.get('title','')[:40]:40s} {t['outcome']:5s} "
-        f"lider=${leader_cost:.2f}@{t['price']:.3f}  nosotros=${copy_cost:.2f}@{fill_price:.3f}  "
+        f"COPIA  {t.get('title','')[:40]:40s} {outcome:5s} "
+        f"lider_lado=${m[outcome]:.2f}/${her_total:.2f} ({her_pct:.0f}%)  "
+        f"nosotros +${copy_cost:.2f}@{fill_price:.3f} (lado=${pos_rec['cost']:.2f})  "
         f"demora={delay:.1f}s  cash=${state['cash']:.2f}"
     )
-    append_log({"type": "open", "ts": now, **state["open_positions"][-1]})
+    append_log({"type": "open", "ts": now, "delta_cost": copy_cost, "delta_price": fill_price, **pos_rec})
 
 
 def append_snapshot(state):
@@ -237,11 +302,13 @@ def poll_real_wallet():
 
 def settle_positions(state, res_cache):
     still_open = []
+    resolved_market_ids = set()
     for pos in state["open_positions"]:
         winner = get_resolution(pos["conditionId"], res_cache)
         if winner is None:
             still_open.append(pos)
             continue
+        resolved_market_ids.add(pos["conditionId"])
         correct = pos["outcome"] == winner
         payout = pos["shares"] if correct else 0.0
         state["cash"] += payout
@@ -252,6 +319,11 @@ def settle_positions(state, res_cache):
         )
         append_log({"type": "close", "ts": time.time(), "correct": correct, "pnl": pnl, **pos})
     state["open_positions"] = still_open
+    # limpiamos leader_state de mercados ya resueltos (5 min, no van a tener
+    # mas trades) para que no crezca sin limite
+    leader_state = state.get("leader_state", {})
+    for cid in resolved_market_ids:
+        leader_state.pop(cid, None)
 
 
 def main():
