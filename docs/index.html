@@ -73,11 +73,389 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
       <span class="wallet-addr mono-sm">0x41e2e1&hellip;9fa354</span>
     </div>
     <div>
-      <span class="updated">actualizado 2026-09-14 13:06:15 UTC</span>
+      <span class="updated">actualizado 2026-09-14 13:24:17 UTC</span>
     </div>
   </div>
 
-<div class="card"><p class="muted">Todavía no arrancó (o no se publicó ningún estado todavía).</p></div>
+  <div class="stat-strip">
+    <div class="stat-tile"><div class="label">Equity (papel)</div><div class="value bad">$2500.00</div></div>
+    <div class="stat-tile"><div class="label">Capital inicial</div><div class="value">$2500.00</div></div>
+    <div class="stat-tile"><div class="label">Retorno</div><div class="value bad">-0.00%</div></div>
+    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">—</div></div>
+    <div class="stat-tile"><div class="label">Horas corriendo</div><div class="value">0.0h</div></div>
+  </div>
+
+  <div class="banner">
+    <span>&#9889;</span>
+    <div><span class="pill accent"><span class="pill-dot"></span> papel &middot; sin plata real</span> &mdash; copia 1:1: mismo mercado, mismo lado, mismo monto en dólares que ella, sin filtro ni tope
+    proporcional. El único tope es el capital disponible.</div>
+  </div>
+
+  <div class="card">
+    <h2>Demora real medida</h2>
+    <div class="sub">Segundos entre que ella compra y que nosotros entramos.</div>
+    <div class="mono-sm">prom 72.6s · mediana 52.5s · p90 174.5s · máx 225.5s</div>
+  </div>
+
+  <div class="card">
+    <h2>Embudo</h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Detectados</th><th>Copiados</th><th>Bloqueados (precio roto)</th><th>Sin cash (papel)</th><th>Bloqueados por tope</th><th>Órdenes fallidas</th><th>Invertido real</th></tr>
+      <tr>
+        <td class="num">38</td>
+        <td class="num">33</td>
+        <td class="num">5</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td class="num">$0.00</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+
+  <div class="card">
+    <h2>Todos los trades (33)</h2>
+    <div class="sub">Mercado, lado, costo, precio al que entramos, precio de ella, demora en segundos. Más reciente primero.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Nuestro precio</th><th>Precio de ella</th><th>Demora</th><th>Tipo</th></tr>
+      <tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">70.00</td>
+          <td class="num">0.690</td>
+          <td class="num">0.700</td>
+          <td class="num">1.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">4.05</td>
+          <td class="num">0.620</td>
+          <td class="num">0.810</td>
+          <td class="num">4.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">1.00</td>
+          <td class="num">0.050</td>
+          <td class="num">0.050</td>
+          <td class="num">6.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">8.10</td>
+          <td class="num">0.620</td>
+          <td class="num">0.810</td>
+          <td class="num">9.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">7.90</td>
+          <td class="num">0.620</td>
+          <td class="num">0.790</td>
+          <td class="num">10.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">8.91</td>
+          <td class="num">0.320</td>
+          <td class="num">0.330</td>
+          <td class="num">12.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">33.56</td>
+          <td class="num">0.320</td>
+          <td class="num">0.440</td>
+          <td class="num">13.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">52.00</td>
+          <td class="num">0.690</td>
+          <td class="num">0.520</td>
+          <td class="num">19.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">1.00</td>
+          <td class="num">0.050</td>
+          <td class="num">0.050</td>
+          <td class="num">21.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">31.49</td>
+          <td class="num">0.320</td>
+          <td class="num">0.470</td>
+          <td class="num">21.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">9.18</td>
+          <td class="num">0.690</td>
+          <td class="num">0.540</td>
+          <td class="num">24.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">3.90</td>
+          <td class="num">0.620</td>
+          <td class="num">0.780</td>
+          <td class="num">34.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">6.40</td>
+          <td class="num">0.690</td>
+          <td class="num">0.640</td>
+          <td class="num">51.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">6.75</td>
+          <td class="num">0.620</td>
+          <td class="num">0.750</td>
+          <td class="num">52.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">1.75</td>
+          <td class="num">0.620</td>
+          <td class="num">0.740</td>
+          <td class="num">52.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">34.00</td>
+          <td class="num">0.320</td>
+          <td class="num">0.340</td>
+          <td class="num">52.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">65.00</td>
+          <td class="num">0.690</td>
+          <td class="num">0.650</td>
+          <td class="num">54.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">55.99</td>
+          <td class="num">0.690</td>
+          <td class="num">0.640</td>
+          <td class="num">58.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">2.40</td>
+          <td class="num">0.240</td>
+          <td class="num">0.240</td>
+          <td class="num">79.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">32.00</td>
+          <td class="num">0.320</td>
+          <td class="num">0.320</td>
+          <td class="num">85.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">1.24</td>
+          <td class="num">0.510</td>
+          <td class="num">0.740</td>
+          <td class="num">91.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">7.00</td>
+          <td class="num">0.510</td>
+          <td class="num">0.700</td>
+          <td class="num">93.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Bitcoin Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">15.34</td>
+          <td class="num">0.320</td>
+          <td class="num">0.260</td>
+          <td class="num">96.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">3.80</td>
+          <td class="num">0.466</td>
+          <td class="num">0.380</td>
+          <td class="num">124.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">2.35</td>
+          <td class="num">0.620</td>
+          <td class="num">0.470</td>
+          <td class="num">129.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">5.40</td>
+          <td class="num">0.466</td>
+          <td class="num">0.540</td>
+          <td class="num">130.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">2.40</td>
+          <td class="num">0.620</td>
+          <td class="num">0.400</td>
+          <td class="num">142.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">3.20</td>
+          <td class="num">0.320</td>
+          <td class="num">0.320</td>
+          <td class="num">168.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">1.75</td>
+          <td class="num">0.350</td>
+          <td class="num">0.350</td>
+          <td class="num">171.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Down</td>
+          <td class="num">6.30</td>
+          <td class="num">0.510</td>
+          <td class="num">0.630</td>
+          <td class="num">174.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Ethereum Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">3.30</td>
+          <td class="num">0.466</td>
+          <td class="num">0.330</td>
+          <td class="num">199.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">1.85</td>
+          <td class="num">0.370</td>
+          <td class="num">0.370</td>
+          <td class="num">202.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+<tr>
+          <td class="mono-sm">2026-09-14 13:23:58 UTC</td>
+          <td>Solana Up or Down - September 14, 9:20AM-9:25AM ET</td>
+          <td>Up</td>
+          <td class="num">2.05</td>
+          <td class="num">0.410</td>
+          <td class="num">0.410</td>
+          <td class="num">225.5s</td>
+          <td class="pill pending">papel</td>
+        </tr>
+    </table>
+    </div>
+  </div>
+
 
   <footer>
     Ejecutor propio conectado directo a la API de Polymarket, sin intermediarios ni fee.
