@@ -4011,7 +4011,7 @@
     21.52833890914917,
     21.52833890914917
   ],
-  "paper_cash": 6851.3978300194785,
+  "paper_cash": 7228.071453427075,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x4c6723310f1922b1999bd29cb5c07cd8ad59bb3a061bfe14f30bb67e7b09a07d": {
@@ -4029,13 +4029,6 @@
       },
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 3 Winner"
-    },
-    "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
-      "shares": {
-        "Verdant": 376.6736234075961
-      },
-      "cost": 80.23060000000001,
-      "title": "LoL: Arctic Pandas vs Verdant - Game 2 Winner"
     },
     "0x1ce39e2c9303c4e56fd66699df529524a11907c9e33fe0414856cdf7277dcb75": {
       "shares": {
@@ -4125,16 +4118,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2639.6917942194177,
+  "paper_b_cash": 3021.8002002357093,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
-      "shares": {
-        "Verdant": 376.6736234075961
-      },
-      "cost": 80.23060000000001,
-      "title": "LoL: Arctic Pandas vs Verdant - Game 2 Winner"
-    },
     "0x1ce39e2c9303c4e56fd66699df529524a11907c9e33fe0414856cdf7277dcb75": {
       "shares": {
         "EXILE esports": 244.3912499807692
@@ -4155,14 +4141,6 @@
       },
       "cost": 1.0,
       "title": "Solana Up or Down - September 14, 3:35PM-3:40PM ET"
-    },
-    "0xf8b1020ddbd4c1cb256bfcce98db9b3e70f3f89a7e46202d7630d5525bb888d6": {
-      "shares": {
-        "Up": 62.5,
-        "Down": 5.434782608695652
-      },
-      "cost": 10.0,
-      "title": "Bitcoin Up or Down - September 14, 3:35PM-3:40PM ET"
     },
     "0x8a635306a4db12866de8b250c5de43929e7a67d1cda28602051ca5c92b28a1e7": {
       "shares": {
