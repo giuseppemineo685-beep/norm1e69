@@ -4011,7 +4011,7 @@
     35.395519733428955,
     18.395519733428955
   ],
-  "paper_cash": 6745.931034541173,
+  "paper_cash": 6779.200452305281,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x4c6723310f1922b1999bd29cb5c07cd8ad59bb3a061bfe14f30bb67e7b09a07d": {
@@ -4051,30 +4051,6 @@
       },
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0x7d87761c71c87410795541da7d3388bad9b0f36b2e9d47667f12ab1716fa71f3": {
-      "shares": {
-        "Up": 14.403208268767496,
-        "Down": 1.3698630369675366
-      },
-      "cost": 3.0,
-      "title": "Bitcoin Up or Down - September 14, 3:00PM-3:15PM ET"
-    },
-    "0xc48f5b78e38869bf03498e56ce8c441c23d1d6c3155e33e18cb4638abe5dba5b": {
-      "shares": {
-        "Down": 51.263528138528144,
-        "Up": 24.002002002002
-      },
-      "cost": 20.0,
-      "title": "Ethereum Up or Down - September 14, 3:10PM-3:15PM ET"
-    },
-    "0x1807998202310ce9356fd33d040b558acab47533a38a35bd0224844050c455e4": {
-      "shares": {
-        "Up": 7.897552725138933,
-        "Down": 13.953488485667929
-      },
-      "cost": 11.0,
-      "title": "Bitcoin Up or Down - September 14, 3:10PM-3:15PM ET"
     },
     "0xcc39c933bf183a216c328ec1ee8ed7fa356d4a84043f9bfe892bbd33348601a6": {
       "shares": {
@@ -4133,7 +4109,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2587.146680256409,
+  "paper_b_cash": 2591.241682225412,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
@@ -4149,22 +4125,6 @@
       },
       "cost": 27.32129999846154,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0x7d87761c71c87410795541da7d3388bad9b0f36b2e9d47667f12ab1716fa71f3": {
-      "shares": {
-        "Up": 14.403208268767496,
-        "Down": 1.3698630369675366
-      },
-      "cost": 3.0,
-      "title": "Bitcoin Up or Down - September 14, 3:00PM-3:15PM ET"
-    },
-    "0x1807998202310ce9356fd33d040b558acab47533a38a35bd0224844050c455e4": {
-      "shares": {
-        "Up": 2.7251389320354837,
-        "Down": 4.651162828555977
-      },
-      "cost": 4.0,
-      "title": "Bitcoin Up or Down - September 14, 3:10PM-3:15PM ET"
     },
     "0xcc39c933bf183a216c328ec1ee8ed7fa356d4a84043f9bfe892bbd33348601a6": {
       "shares": {
