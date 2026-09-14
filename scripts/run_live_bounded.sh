@@ -24,8 +24,10 @@ git_retry() {
 }
 
 publish_once() {
+  git checkout -- docs/index.html 2>/dev/null
   git_retry git pull --no-rebase -q -X ours
-  git add state/live_state.json state/live_trades.jsonl 2>/dev/null
+  python3 -B scripts/generate_dashboard.py > /tmp/dashboard_regen.log 2>&1
+  git add docs/index.html state/live_state.json state/live_trades.jsonl 2>/dev/null
   git diff --cached --quiet || git commit -q -m "Live trader: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
   git_retry git push -q
 }

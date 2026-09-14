@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
-"""Genera docs/index.html - dashboard del paper trader de Polycool Strategy."""
+"""Genera docs/index.html - dashboard del bot que copia a norm1e69."""
 import json
-import statistics
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-STATE_PATH = ROOT / "state" / "paper_state.json"
-LOG_PATH = ROOT / "state" / "paper_trades.jsonl"
-SNAPSHOT_PATH = ROOT / "state" / "performance_snapshots.jsonl"
-LIVE_STATE_PATH = ROOT / "state" / "live_state.json"
-LIVE_LOG_PATH = ROOT / "state" / "live_trades.jsonl"
+STATE_PATH = ROOT / "state" / "live_state.json"
+LOG_PATH = ROOT / "state" / "live_trades.jsonl"
 OUT_PATH = ROOT / "docs" / "index.html"
 
-WALLET = "0x3048d65321be3497164cdfc2996f94f98a2e7537"
-OWNER_WALLET = "0xb3B50facc6189C01A98ED909B807CFBA8A3951C4"
-REAL_TRADING_STARTED_AT = 1789381327  # 2026-09-14 ~10:22 UTC - cerrado, ver banner
-LIVE_TRADER_WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69
+WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69
 
 
 def esc(v):
@@ -24,11 +17,7 @@ def esc(v):
 
 
 def load():
-    state = json.loads(STATE_PATH.read_text()) if STATE_PATH.exists() else {
-        "cash": 600.0, "start_cash": 600.0, "open_positions": [], "started_at": time.time(),
-        "n_detected": 0, "n_copied": 0, "n_skipped_conviction": 0, "n_skipped_min": 0,
-        "n_skipped_cash": 0, "delays_measured": [],
-    }
+    state = json.loads(STATE_PATH.read_text()) if STATE_PATH.exists() else None
     events = []
     if LOG_PATH.exists():
         for line in LOG_PATH.read_text().splitlines():
@@ -38,165 +27,60 @@ def load():
                     events.append(json.loads(line))
                 except Exception:
                     pass
-    snapshots = []
-    if SNAPSHOT_PATH.exists():
-        for line in SNAPSHOT_PATH.read_text().splitlines():
-            line = line.strip()
-            if line:
-                try:
-                    snapshots.append(json.loads(line))
-                except Exception:
-                    pass
-    return state, events, snapshots
+    return state, events
 
 
-def load_live():
-    live_state = json.loads(LIVE_STATE_PATH.read_text()) if LIVE_STATE_PATH.exists() else None
-    live_events = []
-    if LIVE_LOG_PATH.exists():
-        for line in LIVE_LOG_PATH.read_text().splitlines():
-            line = line.strip()
-            if line:
-                try:
-                    live_events.append(json.loads(line))
-                except Exception:
-                    pass
-    return live_state, live_events
+def build(state, events):
+    if state is None:
+        return None
+    paper_cash = state.get("paper_cash", 0.0)
+    paper_start = state.get("paper_start_cash", 0.0)
+    paper_open_cost = sum(p["cost"] for p in state.get("paper_positions", {}).values())
+    paper_equity = paper_cash + paper_open_cost
+    paper_ret = ((paper_equity - paper_start) / paper_start * 100) if paper_start else 0.0
 
-
-def build(state, events, snapshots, live_state=None, live_events=None):
-    closes = [e for e in events if e["type"] == "close"]
-    wins = sum(1 for c in closes if c["correct"])
-    total_pnl = sum(c["pnl"] for c in closes)
-    total_cost_closed = sum(c["cost"] for c in closes)
+    closes = [e for e in events if e.get("type") == "close_paper"]
+    wins = sum(1 for c in closes if c.get("pnl", 0) >= 0)
+    win_rate = (wins / len(closes) * 100) if closes else None
 
     delays = state.get("delays_measured", [])
     delay_stats = {}
     if delays:
+        s = sorted(delays)
         delay_stats = {
-            "avg": statistics.mean(delays),
-            "median": statistics.median(delays),
-            "p90": sorted(delays)[int(len(delays) * 0.9)] if len(delays) > 1 else delays[0],
+            "avg": sum(delays) / len(delays),
+            "median": s[len(s) // 2],
+            "p90": s[int(len(s) * 0.9)] if len(s) > 1 else s[0],
             "max": max(delays),
         }
 
-    equity = state["cash"] + sum(p["cost"] for p in state["open_positions"])
     hours_running = (time.time() - state.get("started_at", time.time())) / 3600
 
     return {
-        "cash": state["cash"],
-        "start_cash": state["start_cash"],
-        "equity": equity,
-        "open_n": len(state["open_positions"]),
+        "live": state.get("_live_flag", False),
+        "paper_cash": paper_cash,
+        "paper_start": paper_start,
+        "paper_equity": paper_equity,
+        "paper_ret": paper_ret,
+        "paper_open_n": len(state.get("paper_positions", {})),
         "n_detected": state.get("n_detected", 0),
         "n_copied": state.get("n_copied", 0),
-        "n_skipped_conviction": state.get("n_skipped_conviction", 0),
-        "n_skipped_min": state.get("n_skipped_min", 0),
-        "n_skipped_cash": state.get("n_skipped_cash", 0),
+        "n_skipped_slippage": state.get("n_skipped_slippage", 0),
+        "n_skipped_cap_seguridad": state.get("n_skipped_cap_seguridad", 0),
+        "n_paper_skipped_cash": state.get("n_paper_skipped_cash", 0),
+        "n_orders_failed": state.get("n_orders_failed", 0),
+        "total_invested_live": state.get("total_invested_live", 0.0),
         "closes": len(closes),
-        "wins": wins,
-        "win_rate": (wins / len(closes) * 100) if closes else None,
-        "total_pnl": total_pnl,
-        "total_cost_closed": total_cost_closed,
+        "win_rate": win_rate,
         "delay_stats": delay_stats,
         "hours_running": hours_running,
-        "recent": list(reversed(events))[:40],
-        "open_positions": state["open_positions"][-20:],
-        "snapshots": list(reversed(snapshots))[:48],  # ultimas ~8h a 10min c/u
-        "n_skipped_slippage": state.get("n_skipped_slippage", 0),
-        "real_trading_started_at": REAL_TRADING_STARTED_AT,
-        "owner_wallet": OWNER_WALLET,
-        "live_state": live_state,
-        "live_recent": list(reversed(live_events or [])),  # todos - el usuario pidio ver cada trade
+        "events": list(reversed(events)),  # todos, mas reciente primero
     }
 
 
-def render_snapshots(snapshots):
-    if not snapshots:
-        return '<p class="muted">Todavía no hay snapshots (se registran cada 10 minutos).</p>'
+def render_events(events):
     rows = []
-    for s in snapshots:
-        ts = time.strftime("%Y-%m-%d %H:%M", time.gmtime(s["ts"])) + " UTC"
-        real_flag = " 🟢" if s["ts"] >= REAL_TRADING_STARTED_AT else ""
-        rows.append(f"""<tr>
-          <td class="mono-sm">{esc(ts)}{real_flag}</td>
-          <td class="num">{s['equity']:.2f}</td>
-          <td class="num">{s['cash']:.2f}</td>
-          <td class="num">{s['open_positions']}</td>
-          <td class="num">{s['n_copied']}</td>
-        </tr>""")
-    return f"""<table><tr><th>Hora</th><th>Equity</th><th>Cash</th><th>Abiertas</th><th>Copiadas (total)</th></tr>{''.join(rows)}</table>"""
-
-
-def render_recent(recent):
-    rows = []
-    for e in recent:
-        ts = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(e["ts"])) + " UTC"
-        if e["type"] == "open":
-            rows.append(f"""<tr>
-              <td class="mono-sm">{esc(ts)}</td>
-              <td>{esc(e.get('market_title','') or '')}</td>
-              <td>{esc(e['outcome'])}</td>
-              <td class="num">{e['cost']:.2f}</td>
-              <td class="num">{e['price_paid']:.3f}</td>
-              <td class="num">{e['delay_s']:.1f}s</td>
-              <td class="pill pending">abierta</td>
-            </tr>""")
-        else:
-            cls = "good" if e["correct"] else "bad"
-            label = "ganó" if e["correct"] else "perdió"
-            rows.append(f"""<tr>
-              <td class="mono-sm">{esc(ts)}</td>
-              <td>{esc(e.get('market_title','') or '')}</td>
-              <td>{esc(e['outcome'])}</td>
-              <td class="num">{e['cost']:.2f}</td>
-              <td class="num">{e['price_paid']:.3f}</td>
-              <td class="num">—</td>
-              <td class="pill {cls}">{label} (${e['pnl']:+.2f})</td>
-            </tr>""")
-    return "\n".join(rows) if rows else '<tr><td colspan="7" class="muted">Todavía sin actividad</td></tr>'
-
-
-def render_open(positions):
-    if not positions:
-        return '<p class="muted">Sin posiciones abiertas ahora mismo.</p>'
-    rows = []
-    for p in positions:
-        rows.append(f"""<tr>
-          <td>{esc(p.get('market_title','') or '')}</td>
-          <td>{esc(p['outcome'])}</td>
-          <td class="num">{p['cost']:.2f}</td>
-          <td class="num">{p['price_paid']:.3f}</td>
-          <td class="num">{p['delay_s']:.1f}s</td>
-        </tr>""")
-    return f"""<table><tr><th>Mercado</th><th>Lado</th><th>Costo</th><th>Precio</th><th>Demora</th></tr>{''.join(rows)}</table>"""
-
-
-def render_live_card(d):
-    ls = d.get("live_state")
-    if not ls:
-        return """<div class="card">
-      <h2>Bot en vivo &mdash; norm1e69</h2>
-      <p class="muted">Todavía no arrancó (o no se publicó ningún estado todavía).</p>
-    </div>"""
-    mode_pill = ('<span class="pill bad"><span class="pill-dot"></span> LIVE (plata real)</span>'
-                 if ls.get("_live_flag") else '<span class="pill accent"><span class="pill-dot"></span> papel (sin plata real)</span>')
-
-    paper_cash = ls.get("paper_cash", 0.0)
-    paper_start = ls.get("paper_start_cash", 0.0)
-    paper_open_cost = sum(p["cost"] for p in ls.get("paper_positions", {}).values())
-    paper_equity = paper_cash + paper_open_cost
-    paper_ret = ((paper_equity - paper_start) / paper_start * 100) if paper_start else 0.0
-
-    delays = ls.get("delays_measured", [])
-    delay_txt = "todavía sin mediciones"
-    if delays:
-        s = sorted(delays)
-        delay_txt = (f"prom {sum(delays)/len(delays):.1f}s · mediana {s[len(s)//2]:.1f}s · "
-                     f"p90 {s[int(len(s)*0.9)]:.1f}s · máx {max(delays):.1f}s")
-
-    rows = []
-    for e in d.get("live_recent", []):
+    for e in events:
         ts = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(e["ts"])) + " UTC"
         if e.get("type") == "close_paper":
             cls = "good" if e.get("pnl", 0) >= 0 else "bad"
@@ -208,7 +92,7 @@ def render_live_card(d):
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill {cls}">cierre papel (${e.get('pnl',0):+.2f})</td>
+              <td class="pill {cls}">cierre (${e.get('pnl',0):+.2f})</td>
             </tr>""")
             continue
         tag = "REAL" if e.get("live") else "papel"
@@ -222,49 +106,82 @@ def render_live_card(d):
           <td class="num">{e.get('delay_s',0):.1f}s</td>
           <td class="pill {'bad' if tag=='REAL' else 'pending'}">{tag}</td>
         </tr>""")
-    rows_html = "\n".join(rows) if rows else '<tr><td colspan="8" class="muted">Sin actividad todavía</td></tr>'
-    return f"""<div class="card">
-      <h2>Bot en vivo &mdash; norm1e69</h2>
-      <div class="sub">Copia 1:1 (mismo mercado, mismo lado, mismo monto) conectado directo a la API de Polymarket.
-      Wallet copiada: <code class="mono-sm">{LIVE_TRADER_WALLET[:8]}&hellip;{LIVE_TRADER_WALLET[-6:]}</code>. {mode_pill}</div>
-      <div class="table-scroll">
-      <table>
-        <tr><th>Equity papel</th><th>Cash papel</th><th>Retorno papel</th><th>Detectados</th><th>Copiados</th><th>Demora real</th></tr>
-        <tr>
-          <td class="num">${paper_equity:.2f}</td>
-          <td class="num">${paper_cash:.2f}</td>
-          <td class="num {'good' if paper_ret>=0 else 'bad'}">{paper_ret:+.2f}%</td>
-          <td class="num">{ls.get('n_detected',0)}</td>
-          <td class="num">{ls.get('n_copied',0)}</td>
-          <td class="mono-sm">{delay_txt}</td>
-        </tr>
-      </table>
-      </div>
-      <div class="sub" style="margin-top:14px;">Todos los trades (mercado, lado, costo, precio al que entramos, precio de ella, demora en segundos)</div>
-      <div class="table-scroll">
-      <table>
-        <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Nuestro precio</th><th>Precio de ella</th><th>Demora</th><th>Tipo</th></tr>
-        {rows_html}
-      </table>
-      </div>
-    </div>"""
+    return "\n".join(rows) if rows else '<tr><td colspan="8" class="muted">Todavía sin actividad</td></tr>'
 
 
 def render(d):
-    win_rate_txt = f"{d['win_rate']:.1f}%" if d["win_rate"] is not None else "—"
-    ds = d["delay_stats"]
-    delay_txt = (
-        f"prom {ds['avg']:.1f}s · mediana {ds['median']:.1f}s · p90 {ds['p90']:.1f}s · máx {ds['max']:.1f}s"
-        if ds else "todavía sin mediciones"
-    )
     generated_at = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+
+    if d is None:
+        body = """<div class="card"><p class="muted">Todavía no arrancó (o no se publicó ningún estado todavía).</p></div>"""
+        stat_strip = ""
+        delay_card = ""
+    else:
+        mode_pill = ('<span class="pill bad"><span class="pill-dot"></span> LIVE &middot; plata real</span>'
+                     if d["live"] else '<span class="pill accent"><span class="pill-dot"></span> papel &middot; sin plata real</span>')
+        win_rate_txt = f"{d['win_rate']:.1f}%" if d["win_rate"] is not None else "—"
+        ds = d["delay_stats"]
+        delay_txt = (f"prom {ds['avg']:.1f}s · mediana {ds['median']:.1f}s · p90 {ds['p90']:.1f}s · máx {ds['max']:.1f}s"
+                     if ds else "todavía sin mediciones")
+
+        stat_strip = f"""
+  <div class="stat-strip">
+    <div class="stat-tile"><div class="label">Equity (papel)</div><div class="value {'good' if d['paper_equity']>=d['paper_start'] else 'bad'}">${d['paper_equity']:.2f}</div></div>
+    <div class="stat-tile"><div class="label">Capital inicial</div><div class="value">${d['paper_start']:.2f}</div></div>
+    <div class="stat-tile"><div class="label">Retorno</div><div class="value {'good' if d['paper_ret']>=0 else 'bad'}">{d['paper_ret']:+.2f}%</div></div>
+    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">{win_rate_txt}</div></div>
+    <div class="stat-tile"><div class="label">Horas corriendo</div><div class="value">{d['hours_running']:.1f}h</div></div>
+  </div>
+
+  <div class="banner">
+    <span>&#9889;</span>
+    <div>{mode_pill} &mdash; copia 1:1: mismo mercado, mismo lado, mismo monto en dólares que ella, sin filtro ni tope
+    proporcional. El único tope es el capital disponible.</div>
+  </div>
+
+  <div class="card">
+    <h2>Demora real medida</h2>
+    <div class="sub">Segundos entre que ella compra y que nosotros entramos.</div>
+    <div class="mono-sm">{delay_txt}</div>
+  </div>
+
+  <div class="card">
+    <h2>Embudo</h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Detectados</th><th>Copiados</th><th>Bloqueados (precio roto)</th><th>Sin cash (papel)</th><th>Bloqueados por tope</th><th>Órdenes fallidas</th><th>Invertido real</th></tr>
+      <tr>
+        <td class="num">{d['n_detected']}</td>
+        <td class="num">{d['n_copied']}</td>
+        <td class="num">{d['n_skipped_slippage']}</td>
+        <td class="num">{d['n_paper_skipped_cash']}</td>
+        <td class="num">{d['n_skipped_cap_seguridad']}</td>
+        <td class="num">{d['n_orders_failed']}</td>
+        <td class="num">${d['total_invested_live']:.2f}</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+"""
+        body = f"""
+  <div class="card">
+    <h2>Todos los trades ({len(d['events'])})</h2>
+    <div class="sub">Mercado, lado, costo, precio al que entramos, precio de ella, demora en segundos. Más reciente primero.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Nuestro precio</th><th>Precio de ella</th><th>Demora</th><th>Tipo</th></tr>
+      {render_events(d['events'])}
+    </table>
+    </div>
+  </div>
+"""
 
     return f"""<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Polycool Strategy</title>
+<title>Copiando a norm1e69</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -317,12 +234,11 @@ h1, h2 {{ font-family: 'Fraunces', Georgia, serif; text-wrap: balance; margin: 0
 .card .sub {{ color: var(--ash); font-size: 0.82rem; margin-bottom: 16px; }}
 .muted {{ color: var(--ash); font-size: 0.85rem; }}
 table {{ width: 100%; border-collapse: collapse; font-size: 0.85rem; }}
-th {{ text-align: left; color: var(--ash); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--line); }}
+th {{ text-align: left; color: var(--ash); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }}
 td {{ padding: 7px 8px; border-bottom: 1px solid var(--line); }}
 td.num {{ font-family: 'IBM Plex Mono', monospace; text-align: right; font-variant-numeric: tabular-nums; }}
-.table-scroll {{ overflow-x: auto; }}
+.table-scroll {{ overflow-x: auto; max-height: 70vh; overflow-y: auto; }}
 .banner {{ display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--accent); margin-bottom: 20px; font-size: 0.86rem; }}
-.banner b {{ color: var(--accent); }}
 footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1px solid var(--line); padding-top: 16px; }}
 </style>
 </head>
@@ -331,89 +247,19 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
 
   <div class="masthead">
     <div>
-      <h1>Polycool Strategy</h1>
-      <span class="wallet-addr mono-sm">copiando {WALLET[:8]}&hellip;{WALLET[-6:]} &middot; alias &ldquo;x-MoneyForWhiskas&rdquo;</span>
+      <h1>Copiando a norm1e69</h1>
+      <span class="wallet-addr mono-sm">{WALLET[:8]}&hellip;{WALLET[-6:]}</span>
     </div>
     <div>
-      <span class="pill accent"><span class="pill-dot"></span> papel</span>
       <span class="updated">actualizado {generated_at}</span>
     </div>
   </div>
-
-  <div class="banner">
-    <span>&#128203;</span>
-    <div><b>100% papel, cero plata real.</b> Simula copiar solo las operaciones de esta wallet con costo &ge;$20,
-    mirror 15%, tope $10/trade, capital inicial $600. Sin el 1% de fee de Polycool. La demora y el precio de llenado
-    se miden en tiempo real, no se asumen.</div>
-  </div>
-
-  <div class="stat-strip">
-    <div class="stat-tile"><div class="label">Cash + en posiciones</div><div class="value {'good' if d['equity']>=d['start_cash'] else 'bad'}">${d['equity']:.2f}</div></div>
-    <div class="stat-tile"><div class="label">Capital inicial</div><div class="value">${d['start_cash']:.2f}</div></div>
-    <div class="stat-tile"><div class="label">Retorno</div><div class="value {'good' if d['equity']>=d['start_cash'] else 'bad'}">{(d['equity']-d['start_cash'])/d['start_cash']*100:+.2f}%</div></div>
-    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">{win_rate_txt}</div></div>
-    <div class="stat-tile"><div class="label">Horas corriendo</div><div class="value">{d['hours_running']:.1f}h</div></div>
-  </div>
-
-  <div class="card">
-    <h2>Demora real medida</h2>
-    <div class="sub">Segundos entre que ella compra y que nuestro monitor la detecta (no asumido, medido en cada trade).</div>
-    <div class="mono-sm">{delay_txt}</div>
-  </div>
-
-  <div class="card">
-    <h2>Embudo de filtrado</h2>
-    <div class="sub">De cada trade suyo detectado, cuántos pasan el filtro de convicción y el mínimo de Polymarket.</div>
-    <div class="table-scroll">
-    <table>
-      <tr><th>Detectados</th><th>Copiados</th><th>Bajo $20 (sin convicción)</th><th>Bajo $1 (mínimo Polymarket)</th><th>Sin efectivo</th></tr>
-      <tr>
-        <td class="num">{d['n_detected']}</td>
-        <td class="num">{d['n_copied']}</td>
-        <td class="num">{d['n_skipped_conviction']}</td>
-        <td class="num">{d['n_skipped_min']}</td>
-        <td class="num">{d['n_skipped_cash']}</td>
-      </tr>
-    </table>
-    </div>
-  </div>
-
-  <div class="banner">
-    <span>&#128181;</span>
-    <div><b>Plata real arrancó el 2026-09-14 ~10:22 UTC</b> (marcado con 🟢 en la tabla de abajo) &mdash;
-    $200 en Polycool, wallet <code class="mono-sm">{esc(d['owner_wallet'][:8])}&hellip;{esc(d['owner_wallet'][-6:])}</code>,
-    misma config que este sistema en papel (15% / $10 max / $20 mín. líder / guardia 10¢).
-    Este dashboard sigue como referencia para comparar contra el rendimiento real.</div>
-  </div>
-
-  <div class="card">
-    <h2>Performance cada 10 minutos</h2>
-    <div class="sub">Snapshot de equity (cash + posiciones abiertas), más reciente primero. 🟢 = después de arrancar con plata real.</div>
-    <div class="table-scroll">
-    {render_snapshots(d['snapshots'])}
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Posiciones abiertas ({d['open_n']})</h2>
-    {render_open(d['open_positions'])}
-  </div>
-
-  {render_live_card(d)}
-
-  <div class="card">
-    <h2>Actividad reciente</h2>
-    <div class="sub">Últimos 40 eventos (aperturas y cierres), más reciente primero.</div>
-    <div class="table-scroll">
-    <table>
-      <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Precio</th><th>Demora</th><th>Estado</th></tr>
-      {render_recent(d['recent'])}
-    </table>
-    </div>
-  </div>
+{stat_strip}
+{body}
 
   <footer>
-    Nuestro propio sistema de copy-trading en papel &mdash; no es Polycool, no cobra 1% por trade.
+    Ejecutor propio conectado directo a la API de Polymarket, sin intermediarios ni fee.
+    El sistema anterior (otra wallet) quedó archivado en <code class="mono-sm">archive/</code>.
     Generado por <code class="mono-sm">scripts/generate_dashboard.py</code>.
   </footer>
 
@@ -424,13 +270,15 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
 
 
 def main():
-    state, events, snapshots = load()
-    live_state, live_events = load_live()
-    d = build(state, events, snapshots, live_state, live_events)
+    state, events = load()
+    d = build(state, events)
     html = render(d)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(html)
-    print(f"wrote {OUT_PATH} (equity=${d['equity']:.2f}, {d['n_copied']} copiados)")
+    if d:
+        print(f"wrote {OUT_PATH} (equity=${d['paper_equity']:.2f}, {d['n_copied']} copiados, {len(d['events'])} eventos)")
+    else:
+        print(f"wrote {OUT_PATH} (sin estado todavia)")
 
 
 if __name__ == "__main__":
