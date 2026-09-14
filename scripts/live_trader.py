@@ -187,7 +187,10 @@ def save_state(state):
 def append_log(rec):
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "a") as f:
-        f.write(json.dumps(rec) + "\n")
+        # default=str: la respuesta real de ordenes (AcceptedOrder) y sus
+        # campos Decimal no son serializables directo - se guardan como
+        # texto en vez de romper el registro entero de la operacion.
+        f.write(json.dumps(rec, default=str) + "\n")
 
 
 def current_market_price(condition_id, outcome, timeout=6):
