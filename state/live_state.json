@@ -1817,7 +1817,7 @@
     20.3795645236969,
     18.3795645236969
   ],
-  "paper_cash": 2487.2255004972053,
+  "paper_cash": 2876.251823708531,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -1827,22 +1827,6 @@
       },
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 1 Winner"
-    },
-    "0x770c58384a96de6b3f26289104d651b9cf014985288fd8063869fef0d5724d0c": {
-      "shares": {
-        "Up": 644.7674999999999,
-        "Down": 322.8483470208494
-      },
-      "cost": 355.0587999999999,
-      "title": "Bitcoin Up or Down - September 14, 11:00AM-11:05AM ET"
-    },
-    "0x0bff5ae20c2af6880cf1caf857cc6ceafcead5939de5bf9c56a329c2a7a15178": {
-      "shares": {
-        "Up": 44.434782608695656,
-        "Down": 66.1779761904762
-      },
-      "cost": 65.80950000000001,
-      "title": "Solana Up or Down - September 14, 11:00AM-11:05AM ET"
     },
     "0xda6b10d2ca3df99d188a57bd90865b05f582ce65ad70ea12f5761d8d73231e89": {
       "shares": {
@@ -1910,25 +1894,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 1497.9167356461105,
+  "paper_b_cash": 1880.2763921907695,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x770c58384a96de6b3f26289104d651b9cf014985288fd8063869fef0d5724d0c": {
-      "shares": {
-        "Up": 644.7674999999999,
-        "Down": 322.8483470208494
-      },
-      "cost": 355.0587999999999,
-      "title": "Bitcoin Up or Down - September 14, 11:00AM-11:05AM ET"
-    },
-    "0x0bff5ae20c2af6880cf1caf857cc6ceafcead5939de5bf9c56a329c2a7a15178": {
-      "shares": {
-        "Up": 44.434782608695656,
-        "Down": 59.51130952380953
-      },
-      "cost": 60.2095,
-      "title": "Solana Up or Down - September 14, 11:00AM-11:05AM ET"
-    },
     "0x5003ade61fd47af2cbb5bb285aab60156ea398dd30db466da38905b7f052cd97": {
       "shares": {
         "Up": 26.135345543354703,
