@@ -6,12 +6,17 @@ en vez de simular como scripts/papertrader.py. Misma logica de proporcion
 por mercado ya validada (ver README) - tope al TOTAL del mercado repartido
 segun su proporcion real Up/Down, no un tope por lado.
 
-Parametros calibrados para norm1e69 especificamente (su escala de apuesta es
-mucho mas chica que la wallet original - mediana ~$5-7, no ~$50-100 - asi
-que LEADER_MIN_TRADE se bajo de $20 a $5; validado con backtest sobre 239
-mercados reales del 2026-09-14: filtrar por tamano no mejora su edge como
-si lo hacia con la otra wallet, asi que el filtro aca es solo para
-descartar ruido, no una senal de conviccion).
+Copia 1:1: mismo mercado, mismo lado, mismo monto en dolares que ella -
+sin filtro de conviccion ni tope proporcional (ella hace cientos de trades
+chicos por minuto; filtrar o recalcular por mercado nos haria perder
+operaciones suyas y el resultado dejaria de ser el mismo). El unico piso
+es el minimo real de Polymarket, $1 - no se puede copiar por debajo de eso
+porque no se puede.
+
+Aviso honesto: "exactamente igual" no es 100% posible - hay demora real
+(deteccion + red) entre que ella compra y que nosotros compramos, asi que
+el precio puede moverse un poco. Es la maxima fidelidad posible, no una
+garantia matematica de resultado identico.
 
 =================== SEGURIDAD - LEER ANTES DE CORRER ===================
 - La private key NUNCA se pega en este repo, en el chat, ni en ningun
@@ -34,11 +39,8 @@ import json, os, time, urllib.request, sys
 from pathlib import Path
 
 WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69 - a quien copiamos
-LEADER_MIN_TRADE = 5.0
-MIRROR_PCT = 0.15
-MAX_MARKET_TOTAL = 20.0
-MAX_SLIPPAGE = 0.10
-POLY_MIN_TRADE = 1.0
+POLY_MIN_TRADE = 1.0  # minimo real de Polymarket - piso duro, no un filtro nuestro
+MAX_SLIPPAGE = 0.25  # solo un fusible anti-glitch (precio roto), no un filtro de trades
 POLL_INTERVAL = 1
 
 # tope duro de seguridad: nunca invertir mas de esto en total (posiciones
@@ -107,11 +109,9 @@ def load_state():
         return json.loads(STATE_PATH.read_text())
     return {
         "seen_leader_keys": [],
-        "leader_state": {},  # {conditionId: {"Up": costo_ella, "Down": costo_ella}}
-        "our_positions": {},  # {"conditionId|outcome": {"cost": x, "shares": y}}
         "total_invested_live": 0.0,
         "started_at": time.time(),
-        "n_detected": 0, "n_copied": 0, "n_skipped_conviction": 0,
+        "n_detected": 0, "n_copied": 0,
         "n_skipped_min": 0, "n_skipped_slippage": 0, "n_skipped_cap_seguridad": 0,
         "n_orders_failed": 0,
     }
@@ -140,44 +140,31 @@ def current_market_price(condition_id, outcome, timeout=6):
 
 
 def process_new_trade(t, state, now, client):
+    """Copia 1:1: mismo mercado, mismo lado, mismo monto en dolares que
+    ella gasto en ESTE trade puntual. Sin filtro, sin escalar."""
     leader_cost = t["size"] * t["price"]
     state["n_detected"] += 1
-    if leader_cost < LEADER_MIN_TRADE:
-        state["n_skipped_conviction"] += 1
-        return
 
     condition_id, outcome, token_id = t["conditionId"], t["outcome"], t["asset"]
+    copy_cost = leader_cost
+    if copy_cost < POLY_MIN_TRADE:
+        copy_cost = POLY_MIN_TRADE  # no se puede operar por debajo del minimo real de Polymarket
+
     fill_ref_price = current_market_price(condition_id, outcome)
     if fill_ref_price is None:
         fill_ref_price = t["price"]
     if abs(fill_ref_price - t["price"]) > MAX_SLIPPAGE:
         state["n_skipped_slippage"] += 1
-        log(f"SALTEADO por slippage  {t.get('title','')[:40]:40s} {outcome:5s} lider@{t['price']:.3f} ahora@{fill_ref_price:.3f}")
+        log(f"SALTEADO (precio roto)  {t.get('title','')[:40]:40s} {outcome:5s} lider@{t['price']:.3f} ahora@{fill_ref_price:.3f}")
         return
 
-    m = state["leader_state"].setdefault(condition_id, {"Up": 0.0, "Down": 0.0})
-    m[outcome] = m.get(outcome, 0.0) + leader_cost
-    her_total = m["Up"] + m["Down"]
-    target_total = min(her_total * MIRROR_PCT, MAX_MARKET_TOTAL)
-    target_this_side = target_total * (m[outcome] / her_total) if her_total > 0 else 0.0
-
-    key = f"{condition_id}|{outcome}"
-    existing = state["our_positions"].get(key)
-    already = existing["cost"] if existing else 0.0
-    copy_cost = target_this_side - already
-
-    if copy_cost < POLY_MIN_TRADE:
-        state["n_skipped_min"] += 1
-        return
     if state["total_invested_live"] + copy_cost > LIVE_MAX_TOTAL_CAPITAL:
         state["n_skipped_cap_seguridad"] += 1
         log(f"SALTEADO por tope de seguridad (${LIVE_MAX_TOTAL_CAPITAL:.2f}) - ya invertido ${state['total_invested_live']:.2f}")
         return
 
-    her_pct = (m[outcome] / her_total * 100) if her_total else 0.0
     if not LIVE:
-        log(f"[DRY RUN] copiaria {t.get('title','')[:40]:40s} {outcome:5s} "
-            f"lider_lado=${m[outcome]:.2f}/${her_total:.2f} ({her_pct:.0f}%)  +${copy_cost:.2f}@~{fill_ref_price:.3f}")
+        log(f"[DRY RUN] copiaria {t.get('title','')[:40]:40s} {outcome:5s} +${copy_cost:.2f}@~{fill_ref_price:.3f}")
         resp = {"dry_run": True}
     else:
         try:
@@ -189,14 +176,9 @@ def process_new_trade(t, state, now, client):
             return
 
     state["total_invested_live"] += copy_cost
-    if existing:
-        existing["cost"] += copy_cost
-    else:
-        state["our_positions"][key] = {"cost": copy_cost, "market_title": t.get("title")}
     state["n_copied"] += 1
     append_log({"ts": now, "live": LIVE, "conditionId": condition_id, "outcome": outcome,
                 "cost": copy_cost, "ref_price": fill_ref_price, "leader_cost": leader_cost,
-                "leader_total_side": m[outcome], "leader_total_market": her_total,
                 "market_title": t.get("title"), "response": resp})
 
 

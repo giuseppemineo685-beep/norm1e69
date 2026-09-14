@@ -94,16 +94,18 @@ intermediarios ni fee del 1%. Copia a **norm1e69**
 (`0x41e2e1ccf1e4940029af02259a31c6b89b9fa354`), verificada como ganadora
 consistente ($87 → $100,610 en 39 días, curva oficial de Polymarket).
 
-Misma lógica de proporción por mercado que el paper trader, pero
-recalibrada a su escala (sus trades son mucho más chicos: mediana ~$5-7,
-no ~$50-100):
+**Copia 1:1**, no proporcional: ella hace cientos de trades chicos por
+minuto, así que filtrar por tamaño o recalcular un objetivo por mercado le
+haría perder operaciones — dejaría de ser "el mismo resultado". Por cada
+trade suyo, copiamos el mismo mercado, mismo lado, mismo monto en dólares
+(el único piso es el mínimo real de Polymarket, $1). Sin filtro de
+convicción, sin mirror %, sin tope por mercado — el único tope es
+`LIVE_MAX_TOTAL_CAPITAL`, el freno de mano de seguridad.
 
-- `LEADER_MIN_TRADE = $5` (filtra solo ruido — con ella el tamaño del
-  trade no correlaciona con mejor resultado, a diferencia de la wallet
-  original, validado sobre 239 mercados reales del mismo día)
-- `MIRROR_PCT = 15%`, `MAX_MARKET_TOTAL = $20` por mercado
-- Backtest sobre 239 mercados reales resueltos (2026-09-14, sin modelo de
-  demora): **+4.15% a +5.51%**, consistente con su edge real.
+Aviso honesto: "exactamente igual" no es una garantía matemática — hay
+demora real (detección + red) entre que ella compra y que nosotros
+compramos, así que el precio puede moverse un poco. Es la máxima fidelidad
+posible, no resultado idéntico garantizado.
 
 ### Seguridad — cómo se maneja la private key
 
