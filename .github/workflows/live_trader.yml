@@ -1,0 +1,41 @@
+name: Polycool Strategy Live Trader (norm1e69)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: polycool-strategy-live-trader
+  cancel-in-progress: false
+
+jobs:
+  live_trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    env:
+      # LIVE solo queda en "1" si el secret LIVE_TRADING_ENABLED existe y
+      # vale "1" - por defecto (secret sin crear) corre en dry-run, sin
+      # riesgo, aunque el workflow se dispare solo.
+      LIVE: ${{ secrets.LIVE_TRADING_ENABLED }}
+      POLY_PRIVATE_KEY: ${{ secrets.POLY_PRIVATE_KEY }}
+      POLY_FUNDER: ${{ vars.POLY_FUNDER }}
+      POLY_SIGNATURE_TYPE: ${{ vars.POLY_SIGNATURE_TYPE }}
+      LIVE_MAX_TOTAL_CAPITAL: ${{ vars.LIVE_MAX_TOTAL_CAPITAL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -q py-clob-client
+
+      - name: Run live trader + auto-publish for ~5h40m
+        run: bash scripts/run_live_bounded.sh 20400

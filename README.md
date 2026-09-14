@@ -85,8 +85,49 @@ llenado — así la demora y el slippage quedan reflejados con datos reales.
 - `state/paper_state.json` — estado (cash, posiciones abiertas, contadores).
 - `state/paper_trades.jsonl` — log append-only de cada apertura/cierre.
 
-## Siguiente paso (no implementado todavía, a propósito)
+## Bot en vivo (plata real) — copiando a norm1e69
 
-Ejecución real con dinero — requiere credenciales de la API de Polymarket
-del dueño y una decisión explícita de pasar a plata real, después de
-validar esto en papel.
+Después de cerrar el experimento con Polycool (caja negra que no se pudo
+validar por backtest — ver sección anterior), se construyó un ejecutor
+propio que habla directo con la API de Polymarket (`py-clob-client`), sin
+intermediarios ni fee del 1%. Copia a **norm1e69**
+(`0x41e2e1ccf1e4940029af02259a31c6b89b9fa354`), verificada como ganadora
+consistente ($87 → $100,610 en 39 días, curva oficial de Polymarket).
+
+Misma lógica de proporción por mercado que el paper trader, pero
+recalibrada a su escala (sus trades son mucho más chicos: mediana ~$5-7,
+no ~$50-100):
+
+- `LEADER_MIN_TRADE = $5` (filtra solo ruido — con ella el tamaño del
+  trade no correlaciona con mejor resultado, a diferencia de la wallet
+  original, validado sobre 239 mercados reales del mismo día)
+- `MIRROR_PCT = 15%`, `MAX_MARKET_TOTAL = $20` por mercado
+- Backtest sobre 239 mercados reales resueltos (2026-09-14, sin modelo de
+  demora): **+4.15% a +5.51%**, consistente con su edge real.
+
+### Seguridad — cómo se maneja la private key
+
+**Nunca se pega en el chat ni en el repo.** El bot (`scripts/live_trader.py`)
+la lee de la variable de entorno `POLY_PRIVATE_KEY`, configurada como
+*secret* de GitHub Actions por el dueño directamente:
+
+1. En GitHub: `Settings → Secrets and variables → Actions`
+2. **Secrets** (nunca visibles, ni para mí): `POLY_PRIVATE_KEY` (la clave),
+   `LIVE_TRADING_ENABLED` (poner `1` para operar de verdad — si no existe
+   o vale otra cosa, el bot corre en dry-run automáticamente, sin riesgo)
+3. **Variables** (no sensibles, pueden ser públicas): `POLY_FUNDER` (la
+   dirección que tiene los fondos en Polymarket), `POLY_SIGNATURE_TYPE`
+   (`1` si la cuenta se creó con email/Magic wallet, `0` si es
+   MetaMask/hardware wallet), `LIVE_MAX_TOTAL_CAPITAL` (tope duro de
+   seguridad en dólares, además del tope por mercado — default $100)
+
+Por defecto (`LIVE` sin configurar) el bot corre en **dry-run**: detecta,
+calcula el tamaño de cada orden, lo loguea, pero no manda nada a la
+blockchain. Recién coloca órdenes reales con `LIVE_TRADING_ENABLED=1`
+puesto explícitamente. Antes de eso, correr varias horas en dry-run y
+revisar `state/live_trades.jsonl` para confirmar que el tamaño y momento
+de cada orden simulada tiene sentido.
+
+Recomendado: usar una wallet separada con fondos limitados dedicada solo a
+este bot, no la cuenta principal — así un bug tiene un techo de pérdida
+bajo, no el total de la cuenta.

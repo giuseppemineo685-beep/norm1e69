@@ -9,11 +9,14 @@ ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = ROOT / "state" / "paper_state.json"
 LOG_PATH = ROOT / "state" / "paper_trades.jsonl"
 SNAPSHOT_PATH = ROOT / "state" / "performance_snapshots.jsonl"
+LIVE_STATE_PATH = ROOT / "state" / "live_state.json"
+LIVE_LOG_PATH = ROOT / "state" / "live_trades.jsonl"
 OUT_PATH = ROOT / "docs" / "index.html"
 
 WALLET = "0x3048d65321be3497164cdfc2996f94f98a2e7537"
 OWNER_WALLET = "0xb3B50facc6189C01A98ED909B807CFBA8A3951C4"
-REAL_TRADING_STARTED_AT = 1789381327  # 2026-09-14 ~10:22 UTC
+REAL_TRADING_STARTED_AT = 1789381327  # 2026-09-14 ~10:22 UTC - cerrado, ver banner
+LIVE_TRADER_WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69
 
 
 def esc(v):
@@ -47,7 +50,21 @@ def load():
     return state, events, snapshots
 
 
-def build(state, events, snapshots):
+def load_live():
+    live_state = json.loads(LIVE_STATE_PATH.read_text()) if LIVE_STATE_PATH.exists() else None
+    live_events = []
+    if LIVE_LOG_PATH.exists():
+        for line in LIVE_LOG_PATH.read_text().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    live_events.append(json.loads(line))
+                except Exception:
+                    pass
+    return live_state, live_events
+
+
+def build(state, events, snapshots, live_state=None, live_events=None):
     closes = [e for e in events if e["type"] == "close"]
     wins = sum(1 for c in closes if c["correct"])
     total_pnl = sum(c["pnl"] for c in closes)
@@ -89,6 +106,8 @@ def build(state, events, snapshots):
         "n_skipped_slippage": state.get("n_skipped_slippage", 0),
         "real_trading_started_at": REAL_TRADING_STARTED_AT,
         "owner_wallet": OWNER_WALLET,
+        "live_state": live_state,
+        "live_recent": list(reversed(live_events or []))[:25],
     }
 
 
@@ -151,6 +170,56 @@ def render_open(positions):
           <td class="num">{p['delay_s']:.1f}s</td>
         </tr>""")
     return f"""<table><tr><th>Mercado</th><th>Lado</th><th>Costo</th><th>Precio</th><th>Demora</th></tr>{''.join(rows)}</table>"""
+
+
+def render_live_card(d):
+    ls = d.get("live_state")
+    if not ls:
+        return """<div class="card">
+      <h2>Bot en vivo &mdash; norm1e69</h2>
+      <p class="muted">Todavía no arrancó (o no se publicó ningún estado todavía).</p>
+    </div>"""
+    live_on = ls.get("total_invested_live") is not None
+    mode_pill = ('<span class="pill bad"><span class="pill-dot"></span> LIVE (plata real)</span>'
+                 if ls.get("_live_flag") else '<span class="pill accent"><span class="pill-dot"></span> dry-run (sin plata real)</span>')
+    rows = []
+    for e in d.get("live_recent", []):
+        ts = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(e["ts"])) + " UTC"
+        tag = "REAL" if e.get("live") else "dry-run"
+        rows.append(f"""<tr>
+          <td class="mono-sm">{esc(ts)}</td>
+          <td>{esc(e.get('market_title','') or '')}</td>
+          <td>{esc(e.get('outcome',''))}</td>
+          <td class="num">{e.get('cost',0):.2f}</td>
+          <td class="pill {'bad' if tag=='REAL' else 'pending'}">{tag}</td>
+        </tr>""")
+    rows_html = "\n".join(rows) if rows else '<tr><td colspan="5" class="muted">Sin actividad todavía</td></tr>'
+    return f"""<div class="card">
+      <h2>Bot en vivo &mdash; norm1e69</h2>
+      <div class="sub">Ejecutor propio conectado directo a la API de Polymarket (sin Polycool). Wallet copiada:
+      <code class="mono-sm">{LIVE_TRADER_WALLET[:8]}&hellip;{LIVE_TRADER_WALLET[-6:]}</code>. {mode_pill}</div>
+      <div class="table-scroll">
+      <table>
+        <tr><th>Detectados</th><th>Copiados</th><th>Bajo mínimo</th><th>Bloqueados por slippage</th><th>Bloqueados por tope de seguridad</th><th>Órdenes fallidas</th><th>Invertido total</th></tr>
+        <tr>
+          <td class="num">{ls.get('n_detected',0)}</td>
+          <td class="num">{ls.get('n_copied',0)}</td>
+          <td class="num">{ls.get('n_skipped_min',0)}</td>
+          <td class="num">{ls.get('n_skipped_slippage',0)}</td>
+          <td class="num">{ls.get('n_skipped_cap_seguridad',0)}</td>
+          <td class="num">{ls.get('n_orders_failed',0)}</td>
+          <td class="num">${ls.get('total_invested_live',0):.2f}</td>
+        </tr>
+      </table>
+      </div>
+      <div class="sub" style="margin-top:14px;">Actividad reciente del bot en vivo</div>
+      <div class="table-scroll">
+      <table>
+        <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Tipo</th></tr>
+        {rows_html}
+      </table>
+      </div>
+    </div>"""
 
 
 def render(d):
@@ -302,6 +371,8 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
     {render_open(d['open_positions'])}
   </div>
 
+  {render_live_card(d)}
+
   <div class="card">
     <h2>Actividad reciente</h2>
     <div class="sub">Últimos 40 eventos (aperturas y cierres), más reciente primero.</div>
@@ -326,7 +397,8 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
 
 def main():
     state, events, snapshots = load()
-    d = build(state, events, snapshots)
+    live_state, live_events = load_live()
+    d = build(state, events, snapshots, live_state, live_events)
     html = render(d)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(html)
