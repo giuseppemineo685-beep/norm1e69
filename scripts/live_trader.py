@@ -237,7 +237,22 @@ def _settle_one_book(state, res_cache, positions_key, cash_key, label, event_typ
 def settle_paper_positions(state, res_cache):
     """El papel corre siempre (LIVE o no) para poder comparar. Liquida las
     posiciones de ambos libros (sin filtro y con filtro de 25c) cuyo
-    mercado ya resolvio."""
+    mercado ya resolvio.
+
+    Mismo bug que ya arreglamos en la deteccion: chequear la resolucion de
+    cada posicion abierta era una llamada de red POR POSICION, en fila -
+    con muchas posiciones abiertas (30+), esto solo podia tardar mas que
+    el propio intervalo entre chequeos y bloquear la deteccion de trades
+    nuevos. Ahora se piden todas las resoluciones pendientes EN PARALELO
+    antes de liquidar nada."""
+    pending = {cid for cid in state["paper_positions"] if cid not in res_cache}
+    pending |= {cid for cid in state["paper_b_positions"] if cid not in res_cache}
+    if pending:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(16, len(pending))) as ex:
+            futures = {ex.submit(get_resolution, cid, res_cache): cid for cid in pending}
+            for fut in concurrent.futures.as_completed(futures):
+                fut.result()  # get_resolution ya escribe en res_cache
+
     _settle_one_book(state, res_cache, "paper_positions", "paper_cash", "papel", "close_paper")
     _settle_one_book(state, res_cache, "paper_b_positions", "paper_b_cash", "papel-filtrado", "close_paper_b")
 
