@@ -3431,7 +3431,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 869.1073055993031,
+  "paper_b_cash": 917.8466389326364,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x087ee177388a48b34ad1a00bd05a9bb70c91fcda8c1e4ec8d47ef3643507b4cd": {
@@ -3447,14 +3447,6 @@
       },
       "cost": 80.23060000000001,
       "title": "LoL: Arctic Pandas vs Verdant - Game 2 Winner"
-    },
-    "0xa3d547202e03a8eac6fbf022564dd1c497f8ddeab9dc497cf387172a2cfda08b": {
-      "shares": {
-        "Up": 125.27272898169097,
-        "Down": 48.73933333333333
-      },
-      "cost": 57.64540000007691,
-      "title": "Ethereum Up or Down - September 14, 1:05PM-1:10PM ET"
     },
     "0x1ce39e2c9303c4e56fd66699df529524a11907c9e33fe0414856cdf7277dcb75": {
       "shares": {
