@@ -1,20 +1,7 @@
 {
-  "cash": 2445.470392749774,
+  "cash": 2451.0953934482113,
   "start_cash": 600.0,
   "open_positions": [
-    {
-      "conditionId": "0xd550839a88544beec71f30645cdccb0e0f10c72799a29dcf36770d0b3d524a43",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 1:20AM-1:25AM ET",
-      "cost": 3.375,
-      "shares": 5.625000698437587,
-      "price_paid": 0.5999999255,
-      "leader_price": 0.45,
-      "leader_cost": 22.5,
-      "leader_tx": "0xb6e81999d4e8e7bc9642a9c8c88a0fd674dc59e64ff14082d8473605e4f5cb38",
-      "delay_s": 111.74425387382507,
-      "opened_at": 1789363330.7442539
-    },
     {
       "conditionId": "0x2e66ec32b8a6ccdebf47f7940ac3378432df18531ae194270cf63f2fba101c52",
       "outcome": "Down",
