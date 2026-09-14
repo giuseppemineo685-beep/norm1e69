@@ -3659,7 +3659,7 @@
     131.18680238723755,
     120.18680238723755
   ],
-  "paper_cash": 6214.317851956403,
+  "paper_cash": 6222.3258599644105,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3756,14 +3756,6 @@
       "cost": 8.0,
       "title": "Solana Up or Down - September 14, 2:20PM-2:25PM ET"
     },
-    "0x0ea643f08fed7b5d194851b13ce2e0a3c2dd8f27a6eaa0d9e0bd294aacc174e7": {
-      "shares": {
-        "Up": 8.008008008008007,
-        "Down": 3000.0
-      },
-      "cost": 11.0,
-      "title": "Bitcoin Up or Down - September 14, 2:20PM-2:25PM ET"
-    },
     "0x2e647d20417d86b33380cfde6fa8432a2212a322c4821bc8a7024e8a27023f70": {
       "shares": {
         "Up": 6.666666666666667,
@@ -3790,7 +3782,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2636.991629816487,
+  "paper_b_cash": 2693.9288820560164,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
@@ -3831,14 +3823,6 @@
       "cost": 30.0,
       "title": "Bitcoin Up or Down - September 14, 2:15PM-2:20PM ET"
     },
-    "0x9b0e360a7176f60916bfeb65a5103928836e188e8c27bb5d1e7ab1395a2176be": {
-      "shares": {
-        "Up": 50.931246233523424,
-        "Down": 20.0
-      },
-      "cost": 29.0,
-      "title": "Solana Up or Down - September 14, 2:15PM-2:20PM ET"
-    },
     "0xaa636822819cf40f535ddd730fb8a94a7a595959b2e7154ae8e9b7fdb566cc6e": {
       "shares": {
         "Up": 4.040404040404041,
@@ -3846,14 +3830,6 @@
       },
       "cost": 8.0,
       "title": "Solana Up or Down - September 14, 2:20PM-2:25PM ET"
-    },
-    "0x0ea643f08fed7b5d194851b13ce2e0a3c2dd8f27a6eaa0d9e0bd294aacc174e7": {
-      "shares": {
-        "Up": 6.006006006006006,
-        "Down": 3000.0
-      },
-      "cost": 9.0,
-      "title": "Bitcoin Up or Down - September 14, 2:20PM-2:25PM ET"
     },
     "0xb190a8115f0e4ea7cad312f7d2fb8dc4a4d1f177d7f20e7828be0d34f59bdbb0": {
       "shares": {
