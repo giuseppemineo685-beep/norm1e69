@@ -43,10 +43,11 @@ POLY_MIN_TRADE = 1.0  # minimo real de Polymarket - piso duro, no un filtro nues
 MAX_SLIPPAGE = 0.25  # solo un fusible anti-glitch (precio roto), no un filtro de trades
 POLL_INTERVAL = 1
 
-# tope duro de seguridad: nunca invertir mas de esto en total (posiciones
-# abiertas + ya gastado), sin importar lo que diga la logica de arriba.
-# Es un freno de mano aparte del tope por mercado.
-LIVE_MAX_TOTAL_CAPITAL = float(os.environ.get("LIVE_MAX_TOTAL_CAPITAL", "100.0"))
+# sin freno: LIVE_MAX_TOTAL_CAPITAL sin configurar = sin tope propio, copia
+# todo lo que de. El backstop real pasa a ser el balance real en Polymarket
+# (una orden que no se puede pagar, la rechaza el exchange, no este script).
+_cap_env = os.environ.get("LIVE_MAX_TOTAL_CAPITAL")
+LIVE_MAX_TOTAL_CAPITAL = float(_cap_env) if _cap_env else float("inf")
 
 LIVE = os.environ.get("LIVE") == "1"
 PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY")
