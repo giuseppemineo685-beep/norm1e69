@@ -1,5 +1,5 @@
 {
-  "cash": 2483.120444326842,
+  "cash": 2522.852496879394,
   "start_cash": 600.0,
   "open_positions": [
     {
@@ -182,110 +182,6 @@
       "leader_cost": 21.5,
       "leader_tx": "0x57cd23bf0b7e2d5967711d4a6197b7ec16f9754487f978f36f70292d2db7353f",
       "delay_s": 210.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 4.725,
-      "shares": 4.729729729729729,
-      "price_paid": 0.999,
-      "leader_price": 0.63,
-      "leader_cost": 31.5,
-      "leader_tx": "0x73aac5a98f64063539c6f5241087606cae3dc7bbbb7c9f391376f4a8f6849fc0",
-      "delay_s": 207.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 4.5,
-      "shares": 4.504504504504505,
-      "price_paid": 0.999,
-      "leader_price": 0.6,
-      "leader_cost": 30.0,
-      "leader_tx": "0x97f8d9bcb4469b632126265865871016dae39acb2045698d0271fd294bb0a4d2",
-      "delay_s": 205.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 5.319075000000001,
-      "shares": 5.3243993993994,
-      "price_paid": 0.999,
-      "leader_price": 0.70921,
-      "leader_cost": 35.4605,
-      "leader_tx": "0x48eef836cc8fc3d93ecd71b8366fc4ed4b88b89c087afeaca17cac718de682cc",
-      "delay_s": 204.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 5.3215785,
-      "shares": 5.326905405405405,
-      "price_paid": 0.999,
-      "leader_price": 0.7095438,
-      "leader_cost": 35.47719,
-      "leader_tx": "0x6e887f4ddd64e478e0dab50d298baf851493b5680c62261127c00c1ca982258f",
-      "delay_s": 204.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 5.605002,
-      "shares": 5.610612612612613,
-      "price_paid": 0.999,
-      "leader_price": 0.7473336,
-      "leader_cost": 37.36668,
-      "leader_tx": "0x758530987295d06076610351f67b64608eeb6a0c583daff7bc3123fad592791c",
-      "delay_s": 202.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 5.5750649999999995,
-      "shares": 5.580645645645645,
-      "price_paid": 0.999,
-      "leader_price": 0.743342,
-      "leader_cost": 37.1671,
-      "leader_tx": "0x0154cc1dfaf98d82e94eb9749946b4eb306107b1dbbb8b53706ae84cfc22a77c",
-      "delay_s": 201.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 3.9215999999999998,
-      "shares": 3.9255255255255253,
-      "price_paid": 0.999,
-      "leader_price": 0.76,
-      "leader_cost": 26.144,
-      "leader_tx": "0xa73bd190be78ac5099b9e763e13171db2c76c3e16f7ad782dc4570a5094f47ae",
-      "delay_s": 199.7486972808838,
-      "opened_at": 1789366642.7486973
-    },
-    {
-      "conditionId": "0x84148f9a1b2156c8425caf133bd0327dfab00fc072e33c9a69e97af09cc1d877",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 2:10AM-2:15AM ET",
-      "cost": 4.725,
-      "shares": 4.729729729729729,
-      "price_paid": 0.999,
-      "leader_price": 0.63,
-      "leader_cost": 31.5,
-      "leader_tx": "0x10bdf3815c091f608843866fe25489ce820a690dfd71d42fac6327fd94980e28",
-      "delay_s": 198.7486972808838,
       "opened_at": 1789366642.7486973
     },
     {
