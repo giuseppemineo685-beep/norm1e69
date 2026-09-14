@@ -3316,7 +3316,7 @@
     18.961217164993286,
     8.961217164993286
   ],
-  "paper_cash": 3616.0730289162884,
+  "paper_cash": 3648.5240108291873,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3365,14 +3365,6 @@
       },
       "cost": 80.23060000000001,
       "title": "LoL: Arctic Pandas vs Verdant - Game 2 Winner"
-    },
-    "0xdb4c8f59b17a52996857eadb9f84f4a6e04d07661b2d71f6903ce4dfaac8e7c4": {
-      "shares": {
-        "Down": 33.6,
-        "Up": 32.45098191289895
-      },
-      "cost": 33.35,
-      "title": "Solana Up or Down - September 14, 1:05PM-1:10PM ET"
     },
     "0xa3d547202e03a8eac6fbf022564dd1c497f8ddeab9dc497cf387172a2cfda08b": {
       "shares": {
@@ -3439,7 +3431,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 854.6955402180458,
+  "paper_b_cash": 869.1073055993031,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x087ee177388a48b34ad1a00bd05a9bb70c91fcda8c1e4ec8d47ef3643507b4cd": {
@@ -3455,14 +3447,6 @@
       },
       "cost": 80.23060000000001,
       "title": "LoL: Arctic Pandas vs Verdant - Game 2 Winner"
-    },
-    "0xdb4c8f59b17a52996857eadb9f84f4a6e04d07661b2d71f6903ce4dfaac8e7c4": {
-      "shares": {
-        "Down": 24.799999999999997,
-        "Up": 14.41176538125724
-      },
-      "cost": 19.75,
-      "title": "Solana Up or Down - September 14, 1:05PM-1:10PM ET"
     },
     "0xa3d547202e03a8eac6fbf022564dd1c497f8ddeab9dc497cf387172a2cfda08b": {
       "shares": {
