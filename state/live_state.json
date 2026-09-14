@@ -4011,17 +4011,9 @@
     17.886379718780518,
     14.886379718780518
   ],
-  "paper_cash": 7170.9890375019195,
+  "paper_cash": 7182.279360082564,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xe73875b0883160a61b3097715f953e4f2c5ac67faffa187bac674b5b66b07e9e": {
-      "shares": {
-        "Up": 20.5128228586459,
-        "Down": 11.290322580645162
-      },
-      "cost": 15.0,
-      "title": "Ethereum Up or Down - September 14, 5:30PM-5:35PM ET"
-    },
     "0xf9a32f422350e811e0ec37a62b40140328eb2c3d546d5bda2536130a234cd5dc": {
       "shares": {
         "Up": 53.50877192982456,
@@ -4056,17 +4048,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2930.222190390075,
+  "paper_b_cash": 2936.673803293301,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xe73875b0883160a61b3097715f953e4f2c5ac67faffa187bac674b5b66b07e9e": {
-      "shares": {
-        "Up": 7.6923085719922115,
-        "Down": 6.451612903225807
-      },
-      "cost": 7.0,
-      "title": "Ethereum Up or Down - September 14, 5:30PM-5:35PM ET"
-    },
     "0xf9a32f422350e811e0ec37a62b40140328eb2c3d546d5bda2536130a234cd5dc": {
       "shares": {
         "Up": 53.50877192982456,
