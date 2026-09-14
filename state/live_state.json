@@ -959,7 +959,7 @@
     42.78057622909546,
     29.78057622909546
   ],
-  "paper_cash": 2006.7476536821925,
+  "paper_cash": 2018.3101536821925,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x7ae7c546b5ac2bd61bb1451a06f38539ebc515556eea54b857b1b739dd15e424": {
@@ -969,14 +969,6 @@
       },
       "cost": 6.6000000000000005,
       "title": "Solana Up or Down - September 14, 9:55AM-10:00AM ET"
-    },
-    "0x04f04ea6d81228c87449f9fbc0d76e7788f82fdc6cc9a56ea1a27c935e6f65a4": {
-      "shares": {
-        "Up": 10.555555555555557,
-        "Down": 11.5625
-      },
-      "cost": 12.15,
-      "title": "Ethereum Up or Down - September 14, 9:55AM-10:00AM ET"
     },
     "0xf380eced266007cbae03abffa5a9a21e7f70b6228d6303ab0e8a2e381f575229": {
       "shares": {
