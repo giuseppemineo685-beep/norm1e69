@@ -4014,14 +4014,6 @@
   "paper_cash": 7250.986518272774,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0x4c6723310f1922b1999bd29cb5c07cd8ad59bb3a061bfe14f30bb67e7b09a07d": {
-      "shares": {
-        "Up": 0.0,
-        "Down": 0.0
-      },
-      "cost": 0.0,
-      "title": "LoL: EXILE esports vs eSuba - Game 2 Winner"
-    },
     "0x4cdf33b65b69095e856a1a03bcae54e7daf5db9bfd2573515a25a6e3715b868f": {
       "shares": {
         "Up": 51.282051282051256,
