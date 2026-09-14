@@ -35,7 +35,7 @@ garantia matematica de resultado identico.
   LIVE=1 no puede perder plata.
 ==========================================================================
 """
-import json, os, time, urllib.request, sys
+import concurrent.futures, json, os, time, urllib.request, sys
 from pathlib import Path
 
 WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69 - a quien copiamos
@@ -325,15 +325,31 @@ def main():
         try:
             trades = http_get_json(f"https://data-api.polymarket.com/trades?user={WALLET}&limit=100", timeout=10)
             now = time.time()
-            price_cache = {}  # se resetea cada poll - ver docstring de process_new_trade
+            new_trades = []
             for t in reversed(trades):
                 key = t["transactionHash"] + str(t["timestamp"]) + str(t["size"])
                 if key in seen:
                     continue
                 seen.add(key)
-                if warm_start:
-                    continue
-                process_new_trade(t, state, now, client, price_cache)
+                if not warm_start:
+                    new_trades.append(t)
+
+            # Pre-buscar el precio de referencia de todos los (mercado, lado)
+            # unicos de este lote EN PARALELO, antes de procesar ningun
+            # trade. Con el cache solo (sin esto) el atraso seguia creciendo
+            # porque ella opera varios mercados distintos a la vez (BTC/ETH/
+            # SOL), no solo el mismo repetido - una consulta de red por
+            # trade, en fila, no daba abasto a su ritmo real.
+            if new_trades:
+                price_cache = {}
+                unique_keys = {(t["conditionId"], t["outcome"]) for t in new_trades}
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(16, len(unique_keys))) as ex:
+                    futures = {ex.submit(current_market_price, cid, oc): (cid, oc) for cid, oc in unique_keys}
+                    for fut in concurrent.futures.as_completed(futures):
+                        price_cache[futures[fut]] = fut.result()
+                for t in new_trades:
+                    process_new_trade(t, state, now, client, price_cache)
+
             if warm_start:
                 log(f"warm start: {len(seen)} trades existentes sembrados sin copiar")
             warm_start = False
