@@ -4011,7 +4011,7 @@
     28.155797243118286,
     24.155797243118286
   ],
-  "paper_cash": 6981.2230916124545,
+  "paper_cash": 7035.4741072401985,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x08fd5e5ad7ced55df72e5746b0f1d78dea6ba784f9657c1f04417fcdb2ff2227": {
@@ -4021,22 +4021,6 @@
       },
       "cost": 12.0,
       "title": "Bitcoin Up or Down - September 14, 7:15PM-7:30PM ET"
-    },
-    "0x0b463d7452298f0a9bbe2a30c6c464867183110c973e772409699cbdf0c94754": {
-      "shares": {
-        "Up": 15.789477166205753,
-        "Down": 13.20754716981132
-      },
-      "cost": 13.0,
-      "title": "Solana Up or Down - September 14, 7:20PM-7:25PM ET"
-    },
-    "0x020ee6863e87647f332463900b099473adf756056e24d0fb7c7191a018ff69d9": {
-      "shares": {
-        "Down": 37.70492615479886,
-        "Up": 38.461538461538446
-      },
-      "cost": 38.0,
-      "title": "Bitcoin Up or Down - September 14, 7:20PM-7:25PM ET"
     },
     "0x40a3c4bdba12c9282b7ea17893baf50b0adb4c2f6fe4c8823032b6bcbbcc642a": {
       "shares": {
@@ -4072,7 +4056,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2807.2337726816577,
+  "paper_b_cash": 2838.070480414487,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x08fd5e5ad7ced55df72e5746b0f1d78dea6ba784f9657c1f04417fcdb2ff2227": {
@@ -4082,22 +4066,6 @@
       },
       "cost": 9.0,
       "title": "Bitcoin Up or Down - September 14, 7:15PM-7:30PM ET"
-    },
-    "0x0b463d7452298f0a9bbe2a30c6c464867183110c973e772409699cbdf0c94754": {
-      "shares": {
-        "Up": 2.631579527700959,
-        "Down": 7.547169811320754
-      },
-      "cost": 5.0,
-      "title": "Solana Up or Down - September 14, 7:20PM-7:25PM ET"
-    },
-    "0x020ee6863e87647f332463900b099473adf756056e24d0fb7c7191a018ff69d9": {
-      "shares": {
-        "Down": 32.78689230852074,
-        "Up": 28.205128205128197
-      },
-      "cost": 31.0,
-      "title": "Bitcoin Up or Down - September 14, 7:20PM-7:25PM ET"
     },
     "0x40a3c4bdba12c9282b7ea17893baf50b0adb4c2f6fe4c8823032b6bcbbcc642a": {
       "shares": {
