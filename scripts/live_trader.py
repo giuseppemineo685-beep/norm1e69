@@ -52,13 +52,17 @@ PAPER_START_CASH = float(os.environ.get("PAPER_START_CASH", "2500.0"))
 # sin freno: LIVE_MAX_TOTAL_CAPITAL sin configurar = sin tope propio, copia
 # todo lo que de. El backstop real pasa a ser el balance real en Polymarket
 # (una orden que no se puede pagar, la rechaza el exchange, no este script).
+# ojo: GitHub Actions declara la env var igual aunque el secret/variable de
+# origen no exista - queda "" (string vacio), no ausente. os.environ.get(x,
+# default) solo aplica el default si la KEY falta, no si esta vacia - por
+# eso todo lo opcional de aca usa "or" en vez de un segundo argumento.
 _cap_env = os.environ.get("LIVE_MAX_TOTAL_CAPITAL")
 LIVE_MAX_TOTAL_CAPITAL = float(_cap_env) if _cap_env else float("inf")
 
 LIVE = os.environ.get("LIVE") == "1"
-PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY")
-FUNDER = os.environ.get("POLY_FUNDER")  # direccion que tiene los fondos en Polymarket
-SIGNATURE_TYPE = int(os.environ.get("POLY_SIGNATURE_TYPE", "1"))  # 1=email/Magic wallet, 0=MetaMask/hardware
+PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY") or None
+FUNDER = os.environ.get("POLY_FUNDER") or None  # direccion que tiene los fondos en Polymarket
+SIGNATURE_TYPE = int(os.environ.get("POLY_SIGNATURE_TYPE") or "1")  # 1=email/Magic wallet, 0=MetaMask/hardware
 HOST = "https://clob.polymarket.com"
 CHAIN_ID = 137
 
