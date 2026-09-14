@@ -3771,7 +3771,7 @@
     31.379842042922974,
     30.379842042922974
   ],
-  "paper_cash": 6255.302245100598,
+  "paper_cash": 6289.003596373358,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3820,14 +3820,6 @@
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
     },
-    "0xf3747fd9d15b8e30001265a83d5afdbb3991b7928ec07f1467da5be9e624f894": {
-      "shares": {
-        "Down": 42.9607029331375,
-        "Up": 12.727274289256389
-      },
-      "cost": 15.0,
-      "title": "Solana Up or Down - September 14, 2:30PM-2:35PM ET"
-    },
     "0x67fb4ec0b8a0cbef6a16e82f112b50eed02977db9f0ca0e2b85e507f9c25beac": {
       "shares": {
         "Down": 3.6363636363636362,
@@ -3835,22 +3827,6 @@
       },
       "cost": 4.0,
       "title": "Bitcoin Up or Down - September 14, 2:30PM-2:45PM ET"
-    },
-    "0xc257e09b552efec4d9ca60c598a65ae47ac58ed39cc76ed1db7ff37b0b8f3308": {
-      "shares": {
-        "Down": 29.16666666666667,
-        "Up": 10.526315789473685
-      },
-      "cost": 15.0,
-      "title": "Ethereum Up or Down - September 14, 2:30PM-2:35PM ET"
-    },
-    "0x9d8ddeae0b1be1bb5b82b37cf09905e40fcf51230bee747ec1367a6ea5fa0580": {
-      "shares": {
-        "Up": 10.44776119402985,
-        "Down": 20.000000297142865
-      },
-      "cost": 14.0,
-      "title": "Bitcoin Up or Down - September 14, 2:30PM-2:35PM ET"
     },
     "0x4ad5a7729d22995d1f4e40666452777fa80bd13adf78ea8123beaf68e8b4cb23": {
       "shares": {
@@ -3878,7 +3854,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2675.560061734079,
+  "paper_b_cash": 2701.4730817117857,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
@@ -3895,14 +3871,6 @@
       "cost": 27.32129999846154,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
     },
-    "0xf3747fd9d15b8e30001265a83d5afdbb3991b7928ec07f1467da5be9e624f894": {
-      "shares": {
-        "Down": 42.9607029331375,
-        "Up": 10.909092247934048
-      },
-      "cost": 14.0,
-      "title": "Solana Up or Down - September 14, 2:30PM-2:35PM ET"
-    },
     "0x67fb4ec0b8a0cbef6a16e82f112b50eed02977db9f0ca0e2b85e507f9c25beac": {
       "shares": {
         "Down": 3.6363636363636362,
@@ -3910,22 +3878,6 @@
       },
       "cost": 4.0,
       "title": "Bitcoin Up or Down - September 14, 2:30PM-2:45PM ET"
-    },
-    "0xc257e09b552efec4d9ca60c598a65ae47ac58ed39cc76ed1db7ff37b0b8f3308": {
-      "shares": {
-        "Down": 29.16666666666667,
-        "Up": 10.526315789473685
-      },
-      "cost": 15.0,
-      "title": "Ethereum Up or Down - September 14, 2:30PM-2:35PM ET"
-    },
-    "0x9d8ddeae0b1be1bb5b82b37cf09905e40fcf51230bee747ec1367a6ea5fa0580": {
-      "shares": {
-        "Up": 4.477611940298507,
-        "Down": 17.142857397551026
-      },
-      "cost": 9.0,
-      "title": "Bitcoin Up or Down - September 14, 2:30PM-2:35PM ET"
     },
     "0x300fb9551a127aa91c0f3bd0eeb4f2ca4b6949ba344090bbc7a1b169d078d928": {
       "shares": {
