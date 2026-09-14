@@ -573,17 +573,9 @@
     0.6703901290893555,
     0.6703901290893555
   ],
-  "paper_cash": 363.83456648016954,
+  "paper_cash": 952.2999597385965,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0x8568e07b2f03b6618299381536d9ade9fa03898c00f52b8774dffeb179428945": {
-      "shares": {
-        "Up": 588.465393258427,
-        "Down": 237.56454545454545
-      },
-      "cost": 549.8663,
-      "title": "Bitcoin Up or Down - September 14, 9:30AM-9:35AM ET"
-    },
     "0xcfe2ff5edbe1e1eeec03d142583031e6d8f57d8b5ae6a7adef7eac2f769f9c50": {
       "shares": {
         "Up": 3.981481481481481,
