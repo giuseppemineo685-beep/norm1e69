@@ -1,59 +1,7 @@
 {
-  "cash": 1431.3407150178707,
+  "cash": 1460.4695028966585,
   "start_cash": 600.0,
   "open_positions": [
-    {
-      "conditionId": "0x10bd3c97af4e9839c5b577d3bb9732f0a5a744aaa602af4ec8d4590dc1ea2d92",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 9:55PM-10:00PM ET",
-      "cost": 3.9,
-      "shares": 7.8,
-      "price_paid": 0.5,
-      "leader_price": 0.65,
-      "leader_cost": 26.0,
-      "leader_tx": "0xe672449420b92c2bedd7faee95627d8dfc5083a26af6be83377bedaa81b393a5",
-      "delay_s": 83.81457781791687,
-      "opened_at": 1789350987.8145778
-    },
-    {
-      "conditionId": "0x10bd3c97af4e9839c5b577d3bb9732f0a5a744aaa602af4ec8d4590dc1ea2d92",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 9:55PM-10:00PM ET",
-      "cost": 5.25,
-      "shares": 10.5,
-      "price_paid": 0.5,
-      "leader_price": 0.8,
-      "leader_cost": 35.0,
-      "leader_tx": "0x2231c9719eb24e782dbd762f7d905ae0540a3e4725f04622d406d2a73f318e6c",
-      "delay_s": 66.81457781791687,
-      "opened_at": 1789350987.8145778
-    },
-    {
-      "conditionId": "0x10bd3c97af4e9839c5b577d3bb9732f0a5a744aaa602af4ec8d4590dc1ea2d92",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 9:55PM-10:00PM ET",
-      "cost": 4.4955,
-      "shares": 4.540909090909091,
-      "price_paid": 0.99,
-      "leader_price": 0.81,
-      "leader_cost": 29.970000000000002,
-      "leader_tx": "0x074bb116d57cc7486d311de339940ef25380b11cf0a5cb9a75f5083c9d1ea9e2",
-      "delay_s": 274.3771650791168,
-      "opened_at": 1789351288.377165
-    },
-    {
-      "conditionId": "0x10bd3c97af4e9839c5b577d3bb9732f0a5a744aaa602af4ec8d4590dc1ea2d92",
-      "outcome": "Up",
-      "market_title": "Bitcoin Up or Down - September 13, 9:55PM-10:00PM ET",
-      "cost": 6.225,
-      "shares": 6.287878787878787,
-      "price_paid": 0.99,
-      "leader_price": 0.83,
-      "leader_cost": 41.5,
-      "leader_tx": "0xdf2559b028e07292e3b6f6d3198f94f97db2c3a245784083291bdd02f3934911",
-      "delay_s": 255.37716507911682,
-      "opened_at": 1789351288.377165
-    },
     {
       "conditionId": "0x3eb0915a44a97ce4c8e082d1be32ad98db3bf8bfd47ef5d18b57d8e88904ffbd",
       "outcome": "Up",
