@@ -1,59 +1,7 @@
 {
-  "cash": 2815.433430530329,
+  "cash": 2839.6961055410598,
   "start_cash": 600.0,
   "open_positions": [
-    {
-      "conditionId": "0x79b9643cf1cce40989c9be275fb5230be69d53fa336244a4bf5b7000aaa26a79",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 7:30AM-7:35AM ET",
-      "cost": 5.3999999999999995,
-      "shares": 6.835444200000197,
-      "price_paid": 0.7899998657,
-      "leader_price": 0.72,
-      "leader_cost": 36.0,
-      "leader_tx": "0xf46afd0117b03f75aded07b8918bf899e04db78cf810cdbd5ff6e11a8ec19f44",
-      "delay_s": 141.1742753982544,
-      "opened_at": 1789385599.1742754
-    },
-    {
-      "conditionId": "0x79b9643cf1cce40989c9be275fb5230be69d53fa336244a4bf5b7000aaa26a79",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 7:30AM-7:35AM ET",
-      "cost": 3.62226,
-      "shares": 4.585140019980132,
-      "price_paid": 0.7899998657,
-      "leader_price": 0.73,
-      "leader_cost": 24.1484,
-      "leader_tx": "0xc0891fba28883fee492c919eec11b9c35664d1c0bbdb1eb974bd9f1684569392",
-      "delay_s": 138.1742753982544,
-      "opened_at": 1789385599.1742754
-    },
-    {
-      "conditionId": "0x79b9643cf1cce40989c9be275fb5230be69d53fa336244a4bf5b7000aaa26a79",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 7:30AM-7:35AM ET",
-      "cost": 5.175,
-      "shares": 6.550634025000189,
-      "price_paid": 0.7899998657,
-      "leader_price": 0.69,
-      "leader_cost": 34.5,
-      "leader_tx": "0x5057a7e29dd2ecfe83eef2e3d1f1a46054776a422b70839248a9203c191e7000",
-      "delay_s": 72.1742753982544,
-      "opened_at": 1789385599.1742754
-    },
-    {
-      "conditionId": "0x79b9643cf1cce40989c9be275fb5230be69d53fa336244a4bf5b7000aaa26a79",
-      "outcome": "Down",
-      "market_title": "Bitcoin Up or Down - September 14, 7:30AM-7:35AM ET",
-      "cost": 4.970249999999999,
-      "shares": 6.291456765750181,
-      "price_paid": 0.7899998657,
-      "leader_price": 0.75,
-      "leader_cost": 33.135,
-      "leader_tx": "0xfd46f12f341843455abc4955bcffc6d00dcb0508fc97c1906e2a0f58bb652d20",
-      "delay_s": 28.174275398254395,
-      "opened_at": 1789385599.1742754
-    },
     {
       "conditionId": "0x84391888c43855572c062d31914a4470140c019f992717b3cac93bd8a53f8791",
       "outcome": "Up",
