@@ -3659,7 +3659,7 @@
     131.18680238723755,
     120.18680238723755
   ],
-  "paper_cash": 6280.327813268641,
+  "paper_cash": 6302.067332353293,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3708,14 +3708,6 @@
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
     },
-    "0x1f78c0359b55d35f5c71e8292d6a30c14c492c2ef946adf25ea10c087cd4fa40": {
-      "shares": {
-        "Up": 17.699115044247794,
-        "Down": 26.08695651967692
-      },
-      "cost": 21.0,
-      "title": "Ethereum Up or Down - September 14, 2:15PM-2:20PM ET"
-    },
     "0xbb52742f6be0d51d951bdfbcef7db77c10750294dd26f9ab56733bf367d8d9aa": {
       "shares": {
         "Down": 1.8518519084362157,
@@ -3731,14 +3723,6 @@
       },
       "cost": 33.0,
       "title": "Bitcoin Up or Down - September 14, 2:15PM-2:20PM ET"
-    },
-    "0xaa636822819cf40f535ddd730fb8a94a7a595959b2e7154ae8e9b7fdb566cc6e": {
-      "shares": {
-        "Up": 4.040404040404041,
-        "Down": 400.0
-      },
-      "cost": 8.0,
-      "title": "Solana Up or Down - September 14, 2:20PM-2:25PM ET"
     },
     "0x2e647d20417d86b33380cfde6fa8432a2212a322c4821bc8a7024e8a27023f70": {
       "shares": {
@@ -3766,7 +3750,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2712.128578131819,
+  "paper_b_cash": 2716.168982172223,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
@@ -3798,14 +3782,6 @@
       },
       "cost": 30.0,
       "title": "Bitcoin Up or Down - September 14, 2:15PM-2:20PM ET"
-    },
-    "0xaa636822819cf40f535ddd730fb8a94a7a595959b2e7154ae8e9b7fdb566cc6e": {
-      "shares": {
-        "Up": 4.040404040404041,
-        "Down": 400.0
-      },
-      "cost": 8.0,
-      "title": "Solana Up or Down - September 14, 2:20PM-2:25PM ET"
     },
     "0x2e647d20417d86b33380cfde6fa8432a2212a322c4821bc8a7024e8a27023f70": {
       "shares": {
