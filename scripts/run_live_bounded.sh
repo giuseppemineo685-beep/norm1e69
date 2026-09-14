@@ -36,7 +36,11 @@ echo "starting live_trader.py in background for ${DURATION}s (LIVE=${LIVE:-0})"
 python3 -u scripts/live_trader.py > /tmp/live_trader.log 2>&1 &
 BOT_PID=$!
 
-PUBLISH_INTERVAL="${PUBLISH_INTERVAL:-5}"  # segundos entre publicaciones (commit+push a git)
+PUBLISH_INTERVAL="${PUBLISH_INTERVAL:-20}"  # segundos entre publicaciones (commit+push a git)
+# ojo: 5s se probo y rompio el build de GitHub Pages en cadena (cada push
+# nuevo interrumpe el build anterior antes de que termine -> "Page build
+# failed" seguido, el sitio se queda pegado en una version vieja). 20s le
+# da tiempo a Pages a terminar cada build sin acumular atraso.
 while [ "$(date +%s)" -lt "$END" ]; do
   sleep "$PUBLISH_INTERVAL"
   publish_once
