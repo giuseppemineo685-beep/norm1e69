@@ -4011,7 +4011,7 @@
     21.82785964012146,
     18.82785964012146
   ],
-  "paper_cash": 7289.949909020173,
+  "paper_cash": 7296.691482053881,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x4c6723310f1922b1999bd29cb5c07cd8ad59bb3a061bfe14f30bb67e7b09a07d": {
@@ -4036,14 +4036,6 @@
       },
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0xb8626af22b86f06a98dc5996e0964157349607cf1927e0cc69f6a9f094819f89": {
-      "shares": {
-        "Up": 63.63636363636365,
-        "Down": 6.741573033707866
-      },
-      "cost": 13.0,
-      "title": "Solana Up or Down - September 14, 3:50PM-3:55PM ET"
     },
     "0x7aa96b9387c01eefc3cdc014a12203a8ff1508a104e2d84dee14eae23b4cff58": {
       "shares": {
