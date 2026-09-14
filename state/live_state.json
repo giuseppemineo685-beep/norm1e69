@@ -4011,17 +4011,9 @@
     17.886379718780518,
     14.886379718780518
   ],
-  "paper_cash": 7151.758267501919,
+  "paper_cash": 7170.9890375019195,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0x0b686a5f802438fd0e3e9d96b71b190442743988878369ff94fdcca3d2f64cc4": {
-      "shares": {
-        "Up": 27.02702702702702,
-        "Down": 19.23077000000003
-      },
-      "cost": 20.0,
-      "title": "Solana Up or Down - September 14, 5:30PM-5:35PM ET"
-    },
     "0xe73875b0883160a61b3097715f953e4f2c5ac67faffa187bac674b5b66b07e9e": {
       "shares": {
         "Up": 20.5128228586459,
@@ -4064,17 +4056,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2920.606805390075,
+  "paper_b_cash": 2930.222190390075,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x0b686a5f802438fd0e3e9d96b71b190442743988878369ff94fdcca3d2f64cc4": {
-      "shares": {
-        "Up": 24.32432432432432,
-        "Down": 9.615385000000016
-      },
-      "cost": 14.0,
-      "title": "Solana Up or Down - September 14, 5:30PM-5:35PM ET"
-    },
     "0xe73875b0883160a61b3097715f953e4f2c5ac67faffa187bac674b5b66b07e9e": {
       "shares": {
         "Up": 7.6923085719922115,
