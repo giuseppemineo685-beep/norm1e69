@@ -1905,14 +1905,6 @@
       "cost": 7.84,
       "title": "Bitcoin Up or Down - September 14, 11:00AM-11:15AM ET"
     },
-    "0xda6b10d2ca3df99d188a57bd90865b05f582ce65ad70ea12f5761d8d73231e89": {
-      "shares": {
-        "Up": 21.730769230769234,
-        "Down": 0.0
-      },
-      "cost": 11.3,
-      "title": "Ethereum Up or Down - September 14, 11:00AM-11:05AM ET"
-    },
     "0x2ced2a5fd934b1925139e1b9436c00955b3f5107a1a37068feb3d80c8f019d5e": {
       "shares": {
         "Up": 5.925925925925926,
