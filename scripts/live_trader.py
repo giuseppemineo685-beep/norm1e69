@@ -126,9 +126,7 @@ def place_market_buy(client, token_id, usd_amount):
     return client.post_order(signed, OrderType.FOK)
 
 
-def load_state():
-    if STATE_PATH.exists():
-        return json.loads(STATE_PATH.read_text())
+def default_state():
     return {
         "seen_leader_keys": [],
         "total_invested_live": 0.0,
@@ -152,6 +150,18 @@ def load_state():
         "n_paper_b_skipped_slippage": 0,
         "n_paper_b_skipped_cash": 0,
     }
+
+
+def load_state():
+    """OJO: cuando se agregan campos nuevos al estado, un state.json viejo
+    ya guardado no los tiene. Sin este merge, cualquier acceso directo tipo
+    state["campo_nuevo"] explota con KeyError apenas arranca - crashea en
+    loop igual que el bug de la env var vacia. Siempre mergear sobre los
+    defaults, nunca devolver el json crudo tal cual."""
+    merged = default_state()
+    if STATE_PATH.exists():
+        merged.update(json.loads(STATE_PATH.read_text()))
+    return merged
 
 
 def save_state(state):
