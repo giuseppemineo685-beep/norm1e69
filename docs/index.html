@@ -73,15 +73,15 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
       <span class="wallet-addr mono-sm">0x41e2e1&hellip;9fa354</span>
     </div>
     <div>
-      <span class="updated">actualizado 2026-09-14 14:42:42 UTC &middot; recarga automática en <span id="cd">20</span>s</span>
+      <span class="updated">actualizado 2026-09-14 14:43:04 UTC &middot; recarga automática en <span id="cd">20</span>s</span>
     </div>
   </div>
 
   <div class="stat-strip">
-    <div class="stat-tile"><div class="label">Equity (papel)</div><div class="value good">$2798.67</div></div>
+    <div class="stat-tile"><div class="label">Equity (papel)</div><div class="value good">$2803.12</div></div>
     <div class="stat-tile"><div class="label">Capital inicial</div><div class="value">$2500.00</div></div>
-    <div class="stat-tile"><div class="label">Retorno</div><div class="value good">+11.95%</div></div>
-    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">46.7%</div></div>
+    <div class="stat-tile"><div class="label">Retorno</div><div class="value good">+12.12%</div></div>
+    <div class="stat-tile"><div class="label">Win rate (cerradas)</div><div class="value">46.8%</div></div>
     <div class="stat-tile"><div class="label">Horas corriendo</div><div class="value">1.3h</div></div>
   </div>
 
@@ -89,6 +89,30 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
     <span>&#9889;</span>
     <div><span class="pill accent"><span class="pill-dot"></span> papel &middot; sin plata real</span> &mdash; copia 1:1: mismo mercado, mismo lado, mismo monto en dólares que ella, sin filtro ni tope
     proporcional. El único tope es el capital disponible.</div>
+  </div>
+
+  <div class="card">
+    <h2>Con filtro vs sin filtro</h2>
+    <div class="sub">Dos carteras de papel en paralelo, mismo capital inicial ($2,500 c/u) — para comparar en vez de adivinar si conviene bloquear trades cuando el precio se movió mucho (25¢) desde que ella compró.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th></th><th>Equity</th><th>Retorno</th><th>Bloqueados por precio</th><th>Bloqueados por cash</th></tr>
+      <tr>
+        <td>Sin filtro (copia 1:1 real)</td>
+        <td class="num">$2803.12</td>
+        <td class="num good">+12.12%</td>
+        <td class="num">185</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>Con filtro (bloquea si se movió &gt;25¢)</td>
+        <td class="num">$0.00</td>
+        <td class="num good">+0.00%</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+      </tr>
+    </table>
+    </div>
   </div>
 
   <div class="card">
@@ -117,12 +141,32 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
 
 
   <div class="card">
-    <h2>Todos los trades (450)</h2>
+    <h2>Todos los trades (452)</h2>
     <div class="sub">Mercado, lado, costo, precio al que entramos, precio de ella, demora en segundos. Más reciente primero.</div>
     <div class="table-scroll">
     <table>
       <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Nuestro precio</th><th>Precio de ella</th><th>Demora</th><th>Tipo</th></tr>
       <tr>
+              <td class="mono-sm">2026-09-14 14:43:00 UTC</td>
+              <td>Solana Up or Down - September 14, 10:30AM-10:35AM ET</td>
+              <td>&mdash;</td>
+              <td class="num">1.00</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="pill bad">cierre (sin filtro) ($-1.00)</td>
+            </tr>
+<tr>
+              <td class="mono-sm">2026-09-14 14:43:00 UTC</td>
+              <td>Ethereum Up or Down - September 14, 10:30AM-10:35AM ET</td>
+              <td>&mdash;</td>
+              <td class="num">12.73</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="pill good">cierre (sin filtro) ($+5.46)</td>
+            </tr>
+<tr>
               <td class="mono-sm">2026-09-14 14:39:14 UTC</td>
               <td>Ethereum Up or Down - September 14, 10:20AM-10:25AM ET</td>
               <td>&mdash;</td>
@@ -130,7 +174,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-5.17)</td>
+              <td class="pill bad">cierre (sin filtro) ($-5.17)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:39:06 UTC</td>
@@ -420,7 +464,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-6.50)</td>
+              <td class="pill bad">cierre (sin filtro) ($-6.50)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:38:25 UTC</td>
@@ -430,7 +474,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-0.20)</td>
+              <td class="pill bad">cierre (sin filtro) ($-0.20)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:38:24 UTC</td>
@@ -440,7 +484,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-8.68)</td>
+              <td class="pill bad">cierre (sin filtro) ($-8.68)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:37:49 UTC</td>
@@ -450,7 +494,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-16.50)</td>
+              <td class="pill bad">cierre (sin filtro) ($-16.50)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:37:33 UTC</td>
@@ -460,7 +504,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-71.56)</td>
+              <td class="pill bad">cierre (sin filtro) ($-71.56)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:37:33 UTC</td>
@@ -470,7 +514,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+15.39)</td>
+              <td class="pill good">cierre (sin filtro) ($+15.39)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:34:05 UTC</td>
@@ -530,7 +574,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+16.20)</td>
+              <td class="pill good">cierre (sin filtro) ($+16.20)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:32:29 UTC</td>
@@ -540,7 +584,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-58.90)</td>
+              <td class="pill bad">cierre (sin filtro) ($-58.90)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:32:12 UTC</td>
@@ -550,7 +594,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-5.07)</td>
+              <td class="pill bad">cierre (sin filtro) ($-5.07)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:29:05 UTC</td>
@@ -810,7 +854,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-6.74)</td>
+              <td class="pill bad">cierre (sin filtro) ($-6.74)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:27:38 UTC</td>
@@ -820,7 +864,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-4.08)</td>
+              <td class="pill bad">cierre (sin filtro) ($-4.08)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:27:21 UTC</td>
@@ -830,7 +874,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-3.93)</td>
+              <td class="pill bad">cierre (sin filtro) ($-3.93)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:27:03 UTC</td>
@@ -840,7 +884,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-5.24)</td>
+              <td class="pill bad">cierre (sin filtro) ($-5.24)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:24:06 UTC</td>
@@ -930,7 +974,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-3.65)</td>
+              <td class="pill bad">cierre (sin filtro) ($-3.65)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:22:24 UTC</td>
@@ -940,7 +984,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+2.13)</td>
+              <td class="pill good">cierre (sin filtro) ($+2.13)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:21:32 UTC</td>
@@ -950,7 +994,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-9.33)</td>
+              <td class="pill bad">cierre (sin filtro) ($-9.33)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:19:05 UTC</td>
@@ -1300,7 +1344,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-5.38)</td>
+              <td class="pill bad">cierre (sin filtro) ($-5.38)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:16:51 UTC</td>
@@ -1310,7 +1354,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+25.92)</td>
+              <td class="pill good">cierre (sin filtro) ($+25.92)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:14:04 UTC</td>
@@ -1450,7 +1494,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+0.58)</td>
+              <td class="pill good">cierre (sin filtro) ($+0.58)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:11:48 UTC</td>
@@ -1460,7 +1504,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-0.59)</td>
+              <td class="pill bad">cierre (sin filtro) ($-0.59)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:11:30 UTC</td>
@@ -1470,7 +1514,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+1.82)</td>
+              <td class="pill good">cierre (sin filtro) ($+1.82)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:10:57 UTC</td>
@@ -1480,7 +1524,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-7.43)</td>
+              <td class="pill bad">cierre (sin filtro) ($-7.43)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:09:03 UTC</td>
@@ -1830,7 +1874,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+1.78)</td>
+              <td class="pill good">cierre (sin filtro) ($+1.78)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:06:58 UTC</td>
@@ -1840,7 +1884,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-12.75)</td>
+              <td class="pill bad">cierre (sin filtro) ($-12.75)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:06:07 UTC</td>
@@ -1850,7 +1894,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+76.29)</td>
+              <td class="pill good">cierre (sin filtro) ($+76.29)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 14:04:03 UTC</td>
@@ -2080,7 +2124,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+3.49)</td>
+              <td class="pill good">cierre (sin filtro) ($+3.49)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:00:58 UTC</td>
@@ -2090,7 +2134,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-0.96)</td>
+              <td class="pill bad">cierre (sin filtro) ($-0.96)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 14:00:41 UTC</td>
@@ -2100,7 +2144,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-33.64)</td>
+              <td class="pill bad">cierre (sin filtro) ($-33.64)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:59:02 UTC</td>
@@ -2250,7 +2294,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+15.61)</td>
+              <td class="pill good">cierre (sin filtro) ($+15.61)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:56:12 UTC</td>
@@ -2260,7 +2304,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+56.01)</td>
+              <td class="pill good">cierre (sin filtro) ($+56.01)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:55:39 UTC</td>
@@ -2270,7 +2314,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+183.58)</td>
+              <td class="pill good">cierre (sin filtro) ($+183.58)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:55:38 UTC</td>
@@ -2280,7 +2324,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-1.80)</td>
+              <td class="pill bad">cierre (sin filtro) ($-1.80)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:54:02 UTC</td>
@@ -2640,7 +2684,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+0.30)</td>
+              <td class="pill good">cierre (sin filtro) ($+0.30)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:50:51 UTC</td>
@@ -2650,7 +2694,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-53.83)</td>
+              <td class="pill bad">cierre (sin filtro) ($-53.83)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:50:17 UTC</td>
@@ -2660,7 +2704,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-2.90)</td>
+              <td class="pill bad">cierre (sin filtro) ($-2.90)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:49:01 UTC</td>
@@ -2930,7 +2974,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+38.60)</td>
+              <td class="pill good">cierre (sin filtro) ($+38.60)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:45:15 UTC</td>
@@ -2940,7 +2984,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill bad">cierre ($-5.59)</td>
+              <td class="pill bad">cierre (sin filtro) ($-5.59)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:45:15 UTC</td>
@@ -2950,7 +2994,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+0.81)</td>
+              <td class="pill good">cierre (sin filtro) ($+0.81)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:44:00 UTC</td>
@@ -3470,7 +3514,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+8.88)</td>
+              <td class="pill good">cierre (sin filtro) ($+8.88)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:40:29 UTC</td>
@@ -3480,7 +3524,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+98.46)</td>
+              <td class="pill good">cierre (sin filtro) ($+98.46)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:39:55 UTC</td>
@@ -3490,7 +3534,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+3.65)</td>
+              <td class="pill good">cierre (sin filtro) ($+3.65)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:39:00 UTC</td>
@@ -3790,7 +3834,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+71.44)</td>
+              <td class="pill good">cierre (sin filtro) ($+71.44)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:35:00 UTC</td>
@@ -3800,7 +3844,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+7.40)</td>
+              <td class="pill good">cierre (sin filtro) ($+7.40)</td>
             </tr>
 <tr>
               <td class="mono-sm">2026-09-14 13:35:00 UTC</td>
@@ -3810,7 +3854,7 @@ footer { margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1p
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill good">cierre ($+0.72)</td>
+              <td class="pill good">cierre (sin filtro) ($+0.72)</td>
             </tr>
 <tr>
           <td class="mono-sm">2026-09-14 13:33:59 UTC</td>
