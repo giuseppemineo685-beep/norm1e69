@@ -266,8 +266,8 @@ def process_new_trade(t, state, now, client, price_cache):
     else:
         state["paper_cash"] -= copy_cost
         pos = state["paper_positions"].setdefault(
-            condition_id, {"shares": {"Up": 0.0, "Down": 0.0}, "cost": 0.0, "title": t.get("title")})
-        pos["shares"][outcome] += copy_cost / fill_ref_price
+            condition_id, {"shares": {}, "cost": 0.0, "title": t.get("title")})
+        pos["shares"][outcome] = pos["shares"].get(outcome, 0.0) + copy_cost / fill_ref_price
         pos["cost"] += copy_cost
 
     # --- papel CON filtro de 25c: columna de comparacion en paralelo
@@ -278,8 +278,8 @@ def process_new_trade(t, state, now, client, price_cache):
     else:
         state["paper_b_cash"] -= copy_cost
         pos_b = state["paper_b_positions"].setdefault(
-            condition_id, {"shares": {"Up": 0.0, "Down": 0.0}, "cost": 0.0, "title": t.get("title")})
-        pos_b["shares"][outcome] += copy_cost / fill_ref_price
+            condition_id, {"shares": {}, "cost": 0.0, "title": t.get("title")})
+        pos_b["shares"][outcome] = pos_b["shares"].get(outcome, 0.0) + copy_cost / fill_ref_price
         pos_b["cost"] += copy_cost
 
     # --- real: solo si LIVE=1
@@ -352,7 +352,16 @@ def main():
                     for fut in concurrent.futures.as_completed(futures):
                         price_cache[futures[fut]] = fut.result()
                 for t in new_trades:
-                    process_new_trade(t, state, now, client, price_cache)
+                    # cada trade en su propio try: un error en UNO (ej. un
+                    # mercado con outcomes que no son Up/Down, como paso con
+                    # un mercado de esports) no debe abortar el resto del
+                    # lote - eso fue justo lo que causo demoras de +300s: la
+                    # excepcion se propagaba y los demas trades del lote
+                    # quedaban en "seen" sin haberse procesado nunca.
+                    try:
+                        process_new_trade(t, state, now, client, price_cache)
+                    except Exception as e:
+                        log(f"ERROR procesando trade individual (se sigue con el resto del lote): {e}")
 
             if warm_start:
                 log(f"warm start: {len(seen)} trades existentes sembrados sin copiar")
