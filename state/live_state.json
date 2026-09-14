@@ -4011,17 +4011,9 @@
     51.63223910331726,
     51.63223910331726
   ],
-  "paper_cash": 7079.381582074607,
+  "paper_cash": 7089.13767995682,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xa06706285d1bc2760409688a253dae95aaf104a412d9b109739deea09e02b1e4": {
-      "shares": {
-        "Down": 42.10526315789474,
-        "Up": 9.756097882212979
-      },
-      "cost": 16.0,
-      "title": "Ethereum Up or Down - September 14, 6:40PM-6:45PM ET"
-    },
     "0xb7f420942bcff6ef7ac8ccb41df03bf18f96d2903602e46d5f3f8c554dfd28a7": {
       "shares": {
         "Up": 53.7202380952381,
