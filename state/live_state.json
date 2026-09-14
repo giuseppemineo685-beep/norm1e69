@@ -4011,7 +4011,7 @@
     94.16470861434937,
     86.16470861434937
   ],
-  "paper_cash": 6837.144767379484,
+  "paper_cash": 6838.3642795827855,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x4c6723310f1922b1999bd29cb5c07cd8ad59bb3a061bfe14f30bb67e7b09a07d": {
@@ -4051,13 +4051,6 @@
       },
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0x88c4a7c24fb4492790f72d6553afa28e554d3838c3abfd43ee68feb8984c4101": {
-      "shares": {
-        "Up": 1.2195122033016061
-      },
-      "cost": 1.0,
-      "title": "Bitcoin Up or Down - September 14, 3:15PM-3:30PM ET"
     },
     "0xb192496fafd9029c14719f8470e949502ec8cf88fb865dc1c6b7c42480b21785": {
       "shares": {
@@ -4123,7 +4116,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2638.0481005777806,
+  "paper_b_cash": 2639.2676127810823,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
@@ -4139,13 +4132,6 @@
       },
       "cost": 27.32129999846154,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0x88c4a7c24fb4492790f72d6553afa28e554d3838c3abfd43ee68feb8984c4101": {
-      "shares": {
-        "Up": 1.2195122033016061
-      },
-      "cost": 1.0,
-      "title": "Bitcoin Up or Down - September 14, 3:15PM-3:30PM ET"
     },
     "0xb192496fafd9029c14719f8470e949502ec8cf88fb865dc1c6b7c42480b21785": {
       "shares": {
