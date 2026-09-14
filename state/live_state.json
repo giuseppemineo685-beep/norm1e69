@@ -700,14 +700,6 @@
       "cost": 4.800000000000001,
       "title": "Solana Up or Down - September 14, 9:35AM-9:40AM ET"
     },
-    "0x07ce95b43f4fb881aea09655e2ef1238af367be540c6fa4be5c41297849af7c8": {
-      "shares": {
-        "Up": 10.0,
-        "Down": 0.0
-      },
-      "cost": 2.9,
-      "title": "Ethereum Up or Down - September 14, 9:35AM-9:40AM ET"
-    },
     "0x8eff2936b1051a6c7b515d74db340ad4fced22ee2090b4391497b5cd3d5b8f32": {
       "shares": {
         "Up": 1070.6196102137428,
