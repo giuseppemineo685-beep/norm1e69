@@ -24,6 +24,14 @@ posible, no un resultado idéntico garantizado.
 real completo (3,500 trades, 239 mercados): cubre el pico de exposición
 simultánea (~$1,905) con margen, cero trades perdidos por falta de cash.
 
+**Guardia anti-glitch, no filtro:** `MAX_SLIPPAGE` solo bloquea si el
+precio que vemos está roto (fuera de rango real 0-1), no si simplemente se
+movió. Con un valor de 0.25 (pensado como filtro, no como fusible) se
+probó en real y bloqueaba el **33% de sus trades** (185 de 562, sin
+ninguna otra causa - 0 por falta de cash, 0 órdenes fallidas) — contradice
+"copiar 1:1". Subido a 0.97: prácticamente nunca actúa sobre un precio
+real, solo sobre datos corruptos.
+
 ## Cómo corre
 
 - `scripts/live_trader.py` — detecta sus trades, calcula la copia 1:1,

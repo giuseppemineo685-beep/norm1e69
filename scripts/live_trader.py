@@ -40,7 +40,12 @@ from pathlib import Path
 
 WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69 - a quien copiamos
 POLY_MIN_TRADE = 1.0  # minimo real de Polymarket - piso duro, no un filtro nuestro
-MAX_SLIPPAGE = 0.25  # solo un fusible anti-glitch (precio roto), no un filtro de trades
+MAX_SLIPPAGE = 0.97  # fusible SOLO anti-glitch (precio corrupto/fuera de 0-1 con margen) -
+# ojo: con 0.25 esto SI actuaba como filtro real, no solo anti-glitch: se
+# probo con datos reales y bloqueaba el 33% de sus trades (185 de 562) sin
+# que hubiera ninguna otra razon (0 por falta de cash, 0 ordenes fallidas).
+# Contradice "copiar 1:1, sin freno" - subido a 0.97 para que solo frene
+# datos realmente rotos, no movimientos de precio normales cerca de 0 o 1.
 POLL_INTERVAL = 1
 RESOLVE_CHECK_INTERVAL = 15
 
