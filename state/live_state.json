@@ -4011,7 +4011,7 @@
     51.29409432411194,
     39.29409432411194
   ],
-  "paper_cash": 7079.223954861203,
+  "paper_cash": 7093.146045021733,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xb0b86efa54287a20af8ced05cebc2ff2c091952107555de3bc64736b472aac9c": {
@@ -4020,30 +4020,6 @@
       },
       "cost": 1.0,
       "title": "Bitcoin Up or Down - September 14, 6:15PM-6:30PM ET"
-    },
-    "0x5b5caddb4d3f205614f23d9922cdda612bbd222ce53043f02243b3558ad18677": {
-      "shares": {
-        "Up": 20.0,
-        "Down": 2.3529412243598626
-      },
-      "cost": 5.0,
-      "title": "Bitcoin Up or Down - September 14, 6:20PM-6:25PM ET"
-    },
-    "0x7e4bd7bf9c577b22889a82826fb49ec8ed478914cd7f727bc3d684c3ab08d4d8": {
-      "shares": {
-        "Up": 42.857142857142854,
-        "Down": 6.250000000000001
-      },
-      "cost": 9.0,
-      "title": "Ethereum Up or Down - September 14, 6:20PM-6:25PM ET"
-    },
-    "0x2ee187008a57f07de345b38c6dd9deceb334980b5695b3f176012042910a2880": {
-      "shares": {
-        "Up": 85.7142857142857,
-        "Down": 5.319148936170213
-      },
-      "cost": 11.0,
-      "title": "Solana Up or Down - September 14, 6:20PM-6:25PM ET"
     },
     "0x0f5b5ab0c359fbbc4d35f07c9f1c917adf2dafd48e89fad81059bf9fb0e5d04e": {
       "shares": {
@@ -4095,25 +4071,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2874.344997715551,
+  "paper_b_cash": 2885.9141466517212,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x7e4bd7bf9c577b22889a82826fb49ec8ed478914cd7f727bc3d684c3ab08d4d8": {
-      "shares": {
-        "Up": 42.857142857142854,
-        "Down": 6.250000000000001
-      },
-      "cost": 9.0,
-      "title": "Ethereum Up or Down - September 14, 6:20PM-6:25PM ET"
-    },
-    "0x2ee187008a57f07de345b38c6dd9deceb334980b5695b3f176012042910a2880": {
-      "shares": {
-        "Up": 85.7142857142857,
-        "Down": 5.319148936170213
-      },
-      "cost": 11.0,
-      "title": "Solana Up or Down - September 14, 6:20PM-6:25PM ET"
-    },
     "0x0f5b5ab0c359fbbc4d35f07c9f1c917adf2dafd48e89fad81059bf9fb0e5d04e": {
       "shares": {
         "Up": 12.903225806451614,
