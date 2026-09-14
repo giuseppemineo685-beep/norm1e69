@@ -1,9 +1,14 @@
 name: Polycool Strategy Live Trader (norm1e69)
 
+# Corre en un runner propio (VPS en Finlandia, no bloqueada por Polymarket
+# para ordenes reales - GitHub Actions hosteado si lo esta). Sin el limite
+# de 6h de los runners de GitHub, asi que corre dias seguidos en vez de
+# reiniciar cada 6h.
+
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 0 * * *"  # re-trigger diario, solo como red de seguridad
 
 permissions:
   contents: write
@@ -14,8 +19,8 @@ concurrency:
 
 jobs:
   live_trade:
-    runs-on: ubuntu-latest
-    timeout-minutes: 355
+    runs-on: [self-hosted, norm1e69]
+    timeout-minutes: 10080  # 7 dias
     env:
       # LIVE solo queda en "1" si el secret LIVE_TRADING_ENABLED existe y
       # vale "1" - por defecto (secret sin crear) corre en dry-run, sin
@@ -30,13 +35,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Install dependencies
-        run: pip install -q py-clob-client
+        run: pip3 install -q py-clob-client
 
-      - name: Run live trader + auto-publish for ~5h40m
-        run: bash scripts/run_live_bounded.sh 20400
+      - name: Run live trader + auto-publish for ~7 dias
+        run: bash scripts/run_live_bounded.sh 604000
