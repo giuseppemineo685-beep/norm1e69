@@ -4011,17 +4011,9 @@
     50.987141132354736,
     41.987141132354736
   ],
-  "paper_cash": 7025.13767995682,
+  "paper_cash": 7037.147114007369,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xb7f420942bcff6ef7ac8ccb41df03bf18f96d2903602e46d5f3f8c554dfd28a7": {
-      "shares": {
-        "Up": 53.7202380952381,
-        "Down": 5.759434050549211
-      },
-      "cost": 7.0,
-      "title": "Solana Up or Down - September 14, 6:45PM-6:50PM ET"
-    },
     "0x192b2aaba13459fb30b6791e8a1560a6ab994c8bb109b15c7e31fa83138f8c3f": {
       "shares": {
         "Up": 33.33333333333333,
@@ -4029,14 +4021,6 @@
       },
       "cost": 8.0,
       "title": "Ethereum Up or Down - September 14, 6:45PM-6:50PM ET"
-    },
-    "0x22b87c3e8d05ddd5b7134d972bdf5a6dca96a58b6a5a941954f696b67cee54ba": {
-      "shares": {
-        "Up": 100.0,
-        "Down": 6.250000000000001
-      },
-      "cost": 10.0,
-      "title": "Bitcoin Up or Down - September 14, 6:45PM-6:50PM ET"
     },
     "0x4d35b89f37e3b5fca707fed0fa52afe64064dc4abe241e65f2be47dcab972f27": {
       "shares": {
@@ -4096,17 +4080,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2830.9520542602113,
+  "paper_b_cash": 2837.0385322770608,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xb7f420942bcff6ef7ac8ccb41df03bf18f96d2903602e46d5f3f8c554dfd28a7": {
-      "shares": {
-        "Up": 53.7202380952381,
-        "Down": 1.9198113501830703
-      },
-      "cost": 5.0,
-      "title": "Solana Up or Down - September 14, 6:45PM-6:50PM ET"
-    },
     "0x192b2aaba13459fb30b6791e8a1560a6ab994c8bb109b15c7e31fa83138f8c3f": {
       "shares": {
         "Up": 33.33333333333333,
@@ -4122,14 +4098,6 @@
       },
       "cost": 6.0,
       "title": "Bitcoin Up or Down - September 14, 6:45PM-7:00PM ET"
-    },
-    "0x22b87c3e8d05ddd5b7134d972bdf5a6dca96a58b6a5a941954f696b67cee54ba": {
-      "shares": {
-        "Up": 75.0,
-        "Down": 4.166666666666667
-      },
-      "cost": 7.0,
-      "title": "Bitcoin Up or Down - September 14, 6:45PM-6:50PM ET"
     },
     "0x2a5ffeb0f625d2d7ac5ab40ed823bc705c2c42bfdec10f8a66ba64afe9d79f6e": {
       "shares": {
