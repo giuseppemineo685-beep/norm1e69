@@ -251,7 +251,7 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
       <span class="wallet-addr mono-sm">{WALLET[:8]}&hellip;{WALLET[-6:]}</span>
     </div>
     <div>
-      <span class="updated">actualizado {generated_at}</span>
+      <span class="updated">actualizado {generated_at} &middot; recarga automática en <span id="cd">5</span>s</span>
     </div>
   </div>
 {stat_strip}
@@ -264,6 +264,17 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
   </footer>
 
 </div>
+<script>
+(function() {{
+  var secs = 5;
+  var el = document.getElementById('cd');
+  setInterval(function() {{
+    secs -= 1;
+    if (secs <= 0) {{ location.reload(); return; }}
+    if (el) el.textContent = secs;
+  }}, 1000);
+}})();
+</script>
 </body>
 </html>
 """
