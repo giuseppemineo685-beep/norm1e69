@@ -25,6 +25,7 @@ jobs:
       POLY_FUNDER: ${{ vars.POLY_FUNDER }}
       POLY_SIGNATURE_TYPE: ${{ vars.POLY_SIGNATURE_TYPE }}
       LIVE_MAX_TOTAL_CAPITAL: ${{ vars.LIVE_MAX_TOTAL_CAPITAL }}
+      FIXED_TRADE_SIZE: ${{ vars.FIXED_TRADE_SIZE }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
