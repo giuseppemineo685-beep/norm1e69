@@ -2026,14 +2026,6 @@
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 1 Winner"
     },
-    "0x5003ade61fd47af2cbb5bb285aab60156ea398dd30db466da38905b7f052cd97": {
-      "shares": {
-        "Up": 26.135345543354703,
-        "Down": 0.0
-      },
-      "cost": 7.84,
-      "title": "Bitcoin Up or Down - September 14, 11:00AM-11:15AM ET"
-    },
     "0x5d752d0ad9ee48c75d9c74e7c1459086610e22c0098b10429a6fcbe510486487": {
       "shares": {
         "Up": 922.5210869565217,
@@ -2095,14 +2087,6 @@
   "paper_b_cash": 1363.0115636364642,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x5003ade61fd47af2cbb5bb285aab60156ea398dd30db466da38905b7f052cd97": {
-      "shares": {
-        "Up": 26.135345543354703,
-        "Down": 0.0
-      },
-      "cost": 7.84,
-      "title": "Bitcoin Up or Down - September 14, 11:00AM-11:15AM ET"
-    },
     "0x4ae6488a986203a6b98cee5285cd6738e4f1e853664f3627a7561a1b71340b7a": {
       "shares": {
         "Up": 109.67,
