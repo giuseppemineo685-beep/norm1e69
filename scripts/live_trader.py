@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Ejecutor de PLATA REAL: copia a norm1e69 (0x41e2e1ccf1e4940029af02259a31c6b89b9fa354)
-colocando ordenes de verdad en Polymarket via su API oficial (py-clob-client),
+colocando ordenes de verdad en Polymarket via su SDK oficial (polymarket-client),
 en vez de simular como scripts/papertrader.py. Misma logica de proporcion
 por mercado ya validada (ver README) - tope al TOTAL del mercado repartido
 segun su proporcion real Up/Down, no un tope por lado.
@@ -107,35 +107,37 @@ def http_get_json(url, timeout=10):
 
 def make_client():
     """Arma el cliente de Polymarket. Solo se llama si LIVE=1 - en dry run
-    ni siquiera hace falta tener las credenciales configuradas."""
+    ni siquiera hace falta tener las credenciales configuradas.
+
+    2026-09-14: py-clob-client esta ARCHIVADO por Polymarket ('no longer
+    functional', ver github.com/Polymarket/py-clob-client) - las ordenes
+    fallaban con 'invalid order version, please use the latest clob-client'
+    porque el formato que armaba ya no es el que la API real acepta.
+    Migrado al SDK oficial nuevo: paquete polymarket-client, import
+    `polymarket`, cliente `SecureClient`."""
     if not PRIVATE_KEY:
         log("ERROR: falta POLY_PRIVATE_KEY (env var) y LIVE=1 esta activo. Abortando.")
         sys.exit(1)
     if not FUNDER:
         log("ERROR: falta POLY_FUNDER (direccion que tiene los fondos). Abortando.")
         sys.exit(1)
-    from py_clob_client.client import ClobClient
-    client = ClobClient(HOST, key=PRIVATE_KEY, chain_id=CHAIN_ID,
-                         signature_type=SIGNATURE_TYPE, funder=FUNDER)
-    client.set_api_creds(client.create_or_derive_api_creds())
-    return client
+    from polymarket import SecureClient
+    return SecureClient.create(private_key=PRIVATE_KEY, wallet=FUNDER)
 
 
 def get_usdc_balance(client):
-    from py_clob_client.clob_types import BalanceAllowanceParams, AssetType
-    bal = client.get_balance_allowance(BalanceAllowanceParams(asset_type=AssetType.COLLATERAL))
+    from polymarket import AssetType
+    bal = client.get_balance_allowance(asset_type=AssetType.COLLATERAL)
     # la API devuelve el balance en unidades de 10^6 (USDC tiene 6 decimales)
-    return float(bal["balance"]) / 1_000_000
+    return bal.balance / 1_000_000
 
 
 def place_market_buy(client, token_id, usd_amount):
-    """Manda una orden de mercado FOK (fill-or-kill: se llena entera ya
-    mismo o se cancela sola - nunca queda una orden colgada en el libro)."""
-    from py_clob_client.clob_types import MarketOrderArgs, OrderType
-    from py_clob_client.order_builder.constants import BUY
-    order_args = MarketOrderArgs(token_id=token_id, amount=usd_amount, side=BUY, order_type=OrderType.FOK)
-    signed = client.create_market_order(order_args)
-    return client.post_order(signed, OrderType.FOK)
+    """Manda una orden de mercado FAK (fill-and-kill: llena lo que pueda ya
+    mismo, cancela el resto - nunca queda una orden colgada en el libro).
+    place_market_order() arma, firma y manda la orden en un solo llamado."""
+    return client.place_market_order(
+        asset_id=token_id, side="BUY", amount=usd_amount, order_type="FAK")
 
 
 def default_state():

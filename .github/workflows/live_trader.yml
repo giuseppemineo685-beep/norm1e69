@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: pip3 install -q --break-system-packages py-clob-client
+        run: pip3 install -q --break-system-packages polymarket-client
 
       - name: Run live trader + auto-publish for ~7 dias
         run: bash scripts/run_live_bounded.sh 604000
