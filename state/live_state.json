@@ -3377,7 +3377,7 @@
     46.176897287368774,
     43.176897287368774
   ],
-  "paper_cash": 2949.4102982837426,
+  "paper_cash": 4247.1645805711205,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -3412,14 +3412,6 @@
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 3 Winner"
     },
-    "0x087ee177388a48b34ad1a00bd05a9bb70c91fcda8c1e4ec8d47ef3643507b4cd": {
-      "shares": {
-        "Up": 27.500000217708333,
-        "Down": 22.941176470588232
-      },
-      "cost": 24.9,
-      "title": "Bitcoin Up or Down - September 14, 1:00PM-1:15PM ET"
-    },
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
       "shares": {
         "Verdant": 376.6736234075961
@@ -3433,22 +3425,6 @@
       },
       "cost": 33.04329999908654,
       "title": "LoL: EXILE esports vs eSuba - Game 4 Winner"
-    },
-    "0xf670c34d7297e9cea0f14b4e8290687cc4dda3ec7c25f6536e5644dbe40e59b8": {
-      "shares": {
-        "Up": 1247.913663512968,
-        "Down": 1244.2561184844487
-      },
-      "cost": 1248.462800002025,
-      "title": "Bitcoin Up or Down - September 14, 1:10PM-1:15PM ET"
-    },
-    "0x9418a74f4a4ce5b29975c6bba64b0358f49052ef8477a42d2b142746a5742c3e": {
-      "shares": {
-        "Down": 152.5,
-        "Up": 22.34061855670103
-      },
-      "cost": 27.770400000000002,
-      "title": "Ethereum Up or Down - September 14, 1:10PM-1:15PM ET"
     },
     "0x79f0e442fbfcb7941387e2148e6b2d323d6abcaae72db7a64812fe9068820663": {
       "shares": {
@@ -3507,16 +3483,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 1692.9528577717076,
+  "paper_b_cash": 1720.4528579894159,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x087ee177388a48b34ad1a00bd05a9bb70c91fcda8c1e4ec8d47ef3643507b4cd": {
-      "shares": {
-        "Up": 27.500000217708333
-      },
-      "cost": 13.2,
-      "title": "Bitcoin Up or Down - September 14, 1:00PM-1:15PM ET"
-    },
     "0x16487d4d36bbdc7af379e817bec3463eb41b1853c0b1ec31ce25a195d73a2f77": {
       "shares": {
         "Verdant": 376.6736234075961
