@@ -46,7 +46,10 @@ MAX_SLIPPAGE = 0.97  # fusible SOLO anti-glitch (precio corrupto/fuera de 0-1 co
 # que hubiera ninguna otra razon (0 por falta de cash, 0 ordenes fallidas).
 # Contradice "copiar 1:1, sin freno" - subido a 0.97 para que solo frene
 # datos realmente rotos, no movimientos de precio normales cerca de 0 o 1.
-POLL_INTERVAL = 1
+POLL_INTERVAL = 0.3  # bajado de 1s - unica perilla que controlamos una vez
+# que el atraso por lote ya se arreglo (cache + paralelizado). Si
+# data-api.polymarket.com empieza a devolver 429 (rate limit), subir esto
+# de nuevo - no vale la pena ganar 0.3s si eso rompe la deteccion entera.
 RESOLVE_CHECK_INTERVAL = 15
 
 # columna de comparacion en el dashboard: un segundo papel en paralelo que
