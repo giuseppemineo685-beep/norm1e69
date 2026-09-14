@@ -4011,33 +4011,9 @@
     7.166353225708008,
     4.166353225708008
   ],
-  "paper_cash": 7279.6101958021945,
+  "paper_cash": 7287.691003883003,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xa5af2965dccfc0785e2f8f375dd400fcf5a67a9aacdf861ba1c7d789966bb919": {
-      "shares": {
-        "Down": 400.0,
-        "Up": 3.0303030303030303
-      },
-      "cost": 7.0,
-      "title": "Solana Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
-    "0x3eb303e63b91928f891ec5854cd56f4e7d0c9662bac07f52107ed51153a459b9": {
-      "shares": {
-        "Down": 400.0,
-        "Up": 2.0202020202020203
-      },
-      "cost": 6.0,
-      "title": "Ethereum Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
-    "0xdcff21e84dc97f171aac1e6a09999ca0622122b22ce03e0171f0dc9a42329d43": {
-      "shares": {
-        "Down": 700.0,
-        "Up": 3.0303030303030303
-      },
-      "cost": 10.0,
-      "title": "Bitcoin Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
     "0xc9543efa5fa48fd2e32012bf75904ea00ff19963e555d65a0899d19433f82e61": {
       "shares": {
         "Up": 1.2345679077884468
@@ -4071,33 +4047,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 3023.1365206846885,
+  "paper_b_cash": 3031.2173287654964,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xa5af2965dccfc0785e2f8f375dd400fcf5a67a9aacdf861ba1c7d789966bb919": {
-      "shares": {
-        "Up": 3.0303030303030303,
-        "Down": 300.0
-      },
-      "cost": 6.0,
-      "title": "Solana Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
-    "0x3eb303e63b91928f891ec5854cd56f4e7d0c9662bac07f52107ed51153a459b9": {
-      "shares": {
-        "Down": 300.0,
-        "Up": 2.0202020202020203
-      },
-      "cost": 5.0,
-      "title": "Ethereum Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
-    "0xdcff21e84dc97f171aac1e6a09999ca0622122b22ce03e0171f0dc9a42329d43": {
-      "shares": {
-        "Down": 600.0,
-        "Up": 3.0303030303030303
-      },
-      "cost": 9.0,
-      "title": "Bitcoin Up or Down - September 14, 4:15PM-4:20PM ET"
-    },
     "0xc9543efa5fa48fd2e32012bf75904ea00ff19963e555d65a0899d19433f82e61": {
       "shares": {
         "Up": 1.2345679077884468
