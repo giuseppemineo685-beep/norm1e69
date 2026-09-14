@@ -40,6 +40,14 @@ from pathlib import Path
 
 WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69 - a quien copiamos
 POLY_MIN_TRADE = 1.0  # minimo real de Polymarket - piso duro, no un filtro nuestro
+
+# modo de PRUEBA: si esta seteado, cada trade real cuesta este monto fijo
+# (no su monto real) - para poder medir ejecucion/demora/precio con MUCHOS
+# trades chiquitos dentro de un presupuesto chico, en vez de quemarlo todo
+# en 1-2 trades grandes copiando su monto exacto. Sin setear = copia 1:1
+# normal (el modo real, para mas adelante).
+_fixed_env = os.environ.get("FIXED_TRADE_SIZE")
+FIXED_TRADE_SIZE = float(_fixed_env) if _fixed_env else None
 MAX_SLIPPAGE = 0.97  # fusible SOLO anti-glitch (precio corrupto/fuera de 0-1 con margen) -
 # ojo: con 0.25 esto SI actuaba como filtro real, no solo anti-glitch: se
 # probo con datos reales y bloqueaba el 33% de sus trades (185 de 562) sin
@@ -244,7 +252,7 @@ def process_new_trade(t, state, now, client, price_cache):
     state["delays_measured"] = (state.get("delays_measured", []) + [delay])[-1000:]
 
     condition_id, outcome, token_id = t["conditionId"], t["outcome"], t["asset"]
-    copy_cost = leader_cost
+    copy_cost = FIXED_TRADE_SIZE if FIXED_TRADE_SIZE is not None else leader_cost
     if copy_cost < POLY_MIN_TRADE:
         copy_cost = POLY_MIN_TRADE  # no se puede operar por debajo del minimo real de Polymarket
 
