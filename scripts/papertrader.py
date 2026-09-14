@@ -28,14 +28,24 @@ WALLET = "0x3048d65321be3497164cdfc2996f94f98a2e7537"
 LEADER_MIN_TRADE = 20.0
 MIRROR_PCT = 0.15
 MAX_PER_TRADE = 10.0
+MAX_SLIPPAGE = 0.10  # 10 centavos - misma guardia configurada en la cuenta real de Polycool
 POLY_MIN_TRADE = 1.0
 START_CASH = 600.0
 POLL_INTERVAL = 3  # segundos - lo mas rapido que tiene sentido para una sola wallet
 RESOLVE_CHECK_INTERVAL = 15
+SNAPSHOT_INTERVAL = 600  # 10 minutos - performance a lo largo del tiempo
+
+# 2026-09-14 ~10:22 UTC: el owner deposito $200 REALES en Polycool con esta
+# misma configuracion (15% / $10 max / $20 min trader / guardia 10c). Este
+# sistema en papel sigue de ahora en mas como referencia para comparar
+# contra el rendimiento real de esa cuenta.
+REAL_TRADING_STARTED_AT = 1789381327
+OWNER_WALLET = "0xb3B50facc6189C01A98ED909B807CFBA8A3951C4"  # wallet real del owner en Polycool
 
 ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = ROOT / "state" / "paper_state.json"
 LOG_PATH = ROOT / "state" / "paper_trades.jsonl"
+SNAPSHOT_PATH = ROOT / "state" / "performance_snapshots.jsonl"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
@@ -63,6 +73,7 @@ def load_state():
         "n_skipped_conviction": 0,
         "n_skipped_min": 0,
         "n_skipped_cash": 0,
+        "n_skipped_slippage": 0,
         "delays_measured": [],  # ultimos N delays reales en segundos
     }
 
@@ -124,6 +135,14 @@ def process_new_trade(t, state, now):
     if fill_price is None:
         fill_price = t["price"]  # ultimo recurso si no hay trades recientes visibles
 
+    if abs(fill_price - t["price"]) > MAX_SLIPPAGE:
+        state["n_skipped_slippage"] = state.get("n_skipped_slippage", 0) + 1
+        log(
+            f"SALTEADO por slippage  {t.get('title','')[:40]:40s} {t['outcome']:5s} "
+            f"lider@{t['price']:.3f} ahora@{fill_price:.3f} (mov>{MAX_SLIPPAGE:.2f})"
+        )
+        return
+
     copy_cost = min(leader_cost * MIRROR_PCT, MAX_PER_TRADE)
     if copy_cost < POLY_MIN_TRADE:
         state["n_skipped_min"] += 1
@@ -154,6 +173,66 @@ def process_new_trade(t, state, now):
         f"demora={delay:.1f}s  cash=${state['cash']:.2f}"
     )
     append_log({"type": "open", "ts": now, **state["open_positions"][-1]})
+
+
+def append_snapshot(state):
+    """Foto de performance cada SNAPSHOT_INTERVAL, para poder ver la curva
+    en el tiempo y comparar despues contra el historial real de Polycool."""
+    equity = state["cash"] + sum(p["cost"] for p in state["open_positions"])
+    snap = {
+        "ts": time.time(),
+        "cash": state["cash"],
+        "equity": equity,
+        "open_positions": len(state["open_positions"]),
+        "n_detected": state.get("n_detected", 0),
+        "n_copied": state.get("n_copied", 0),
+        "n_skipped_slippage": state.get("n_skipped_slippage", 0),
+    }
+    SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(SNAPSHOT_PATH, "a") as f:
+        f.write(json.dumps(snap) + "\n")
+    log(f"SNAPSHOT equity=${equity:.2f} cash=${state['cash']:.2f} abiertas={len(state['open_positions'])}")
+
+
+REAL_LOG_PATH = ROOT / "state" / "real_trades.jsonl"
+_real_seen = set()
+
+
+def poll_real_wallet():
+    """Registra lo que Polycool REALMENTE ejecuto en la wallet del owner
+    (publica, no hace falta ninguna clave) - para comparar despues contra
+    lo que este sistema hubiera copiado."""
+    try:
+        trades = http_get_json(
+            f"https://data-api.polymarket.com/trades?user={OWNER_WALLET}&limit=100", timeout=10
+        )
+    except Exception as e:
+        log(f"error polling wallet real: {e}")
+        return
+    for t in reversed(trades):
+        key = t["transactionHash"] + str(t["timestamp"]) + str(t["size"])
+        if key in _real_seen:
+            continue
+        _real_seen.add(key)
+        if t["timestamp"] < REAL_TRADING_STARTED_AT:
+            continue  # actividad de antes del deposito de $200, no es parte de esta prueba
+        rec = {
+            "ts": time.time(),
+            "trade_timestamp": t["timestamp"],
+            "market_title": t.get("title"),
+            "outcome": t["outcome"],
+            "price": t["price"],
+            "size": t["size"],
+            "cost": t["size"] * t["price"],
+            "transactionHash": t["transactionHash"],
+        }
+        REAL_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REAL_LOG_PATH, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        log(
+            f"REAL (Polycool)  {t.get('title','')[:40]:40s} {t['outcome']:5s} "
+            f"${rec['cost']:.2f}@{t['price']:.3f}"
+        )
 
 
 def settle_positions(state, res_cache):
@@ -187,8 +266,10 @@ def main():
     warm_start = len(seen) == 0
     res_cache = {}
     last_resolve_check = 0
+    last_snapshot = 0
     log(f"iniciando - cash actual=${state['cash']:.2f} (arranco con ${state['start_cash']:.2f}) "
-        f"posiciones abiertas={len(state['open_positions'])} warm_start={warm_start}")
+        f"posiciones abiertas={len(state['open_positions'])} warm_start={warm_start} "
+        f"guardia_slippage=${MAX_SLIPPAGE:.2f}")
 
     while True:
         try:
@@ -211,9 +292,15 @@ def main():
         except Exception as e:
             log(f"error polling trades: {e}")
 
+        poll_real_wallet()
+
         if time.time() - last_resolve_check > RESOLVE_CHECK_INTERVAL:
             settle_positions(state, res_cache)
             last_resolve_check = time.time()
+
+        if time.time() - last_snapshot > SNAPSHOT_INTERVAL:
+            append_snapshot(state)
+            last_snapshot = time.time()
 
         save_state(state)
         time.sleep(POLL_INTERVAL)

@@ -27,7 +27,7 @@ publish_once() {
   git checkout -- docs/index.html 2>/dev/null
   git_retry git pull --no-rebase -q -X ours
   python3 -B scripts/generate_dashboard.py > /tmp/dashboard_regen.log 2>&1
-  git add docs/index.html state/paper_state.json state/paper_trades.jsonl
+  git add docs/index.html state/paper_state.json state/paper_trades.jsonl state/performance_snapshots.jsonl state/real_trades.jsonl
   git diff --cached --quiet || git commit -q -m "Paper trader: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
   git_retry git push -q
 }

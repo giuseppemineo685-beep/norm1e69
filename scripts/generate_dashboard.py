@@ -8,9 +8,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = ROOT / "state" / "paper_state.json"
 LOG_PATH = ROOT / "state" / "paper_trades.jsonl"
+SNAPSHOT_PATH = ROOT / "state" / "performance_snapshots.jsonl"
 OUT_PATH = ROOT / "docs" / "index.html"
 
 WALLET = "0x3048d65321be3497164cdfc2996f94f98a2e7537"
+OWNER_WALLET = "0xb3B50facc6189C01A98ED909B807CFBA8A3951C4"
+REAL_TRADING_STARTED_AT = 1789381327  # 2026-09-14 ~10:22 UTC
 
 
 def esc(v):
@@ -32,10 +35,19 @@ def load():
                     events.append(json.loads(line))
                 except Exception:
                     pass
-    return state, events
+    snapshots = []
+    if SNAPSHOT_PATH.exists():
+        for line in SNAPSHOT_PATH.read_text().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    snapshots.append(json.loads(line))
+                except Exception:
+                    pass
+    return state, events, snapshots
 
 
-def build(state, events):
+def build(state, events, snapshots):
     closes = [e for e in events if e["type"] == "close"]
     wins = sum(1 for c in closes if c["correct"])
     total_pnl = sum(c["pnl"] for c in closes)
@@ -73,7 +85,28 @@ def build(state, events):
         "hours_running": hours_running,
         "recent": list(reversed(events))[:40],
         "open_positions": state["open_positions"][-20:],
+        "snapshots": list(reversed(snapshots))[:48],  # ultimas ~8h a 10min c/u
+        "n_skipped_slippage": state.get("n_skipped_slippage", 0),
+        "real_trading_started_at": REAL_TRADING_STARTED_AT,
+        "owner_wallet": OWNER_WALLET,
     }
+
+
+def render_snapshots(snapshots):
+    if not snapshots:
+        return '<p class="muted">Todavía no hay snapshots (se registran cada 10 minutos).</p>'
+    rows = []
+    for s in snapshots:
+        ts = time.strftime("%Y-%m-%d %H:%M", time.gmtime(s["ts"])) + " UTC"
+        real_flag = " 🟢" if s["ts"] >= REAL_TRADING_STARTED_AT else ""
+        rows.append(f"""<tr>
+          <td class="mono-sm">{esc(ts)}{real_flag}</td>
+          <td class="num">{s['equity']:.2f}</td>
+          <td class="num">{s['cash']:.2f}</td>
+          <td class="num">{s['open_positions']}</td>
+          <td class="num">{s['n_copied']}</td>
+        </tr>""")
+    return f"""<table><tr><th>Hora</th><th>Equity</th><th>Cash</th><th>Abiertas</th><th>Copiadas (total)</th></tr>{''.join(rows)}</table>"""
 
 
 def render_recent(recent):
@@ -248,6 +281,22 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
     </div>
   </div>
 
+  <div class="banner">
+    <span>&#128181;</span>
+    <div><b>Plata real arrancó el 2026-09-14 ~10:22 UTC</b> (marcado con 🟢 en la tabla de abajo) &mdash;
+    $200 en Polycool, wallet <code class="mono-sm">{esc(d['owner_wallet'][:8])}&hellip;{esc(d['owner_wallet'][-6:])}</code>,
+    misma config que este sistema en papel (15% / $10 max / $20 mín. líder / guardia 10¢).
+    Este dashboard sigue como referencia para comparar contra el rendimiento real.</div>
+  </div>
+
+  <div class="card">
+    <h2>Performance cada 10 minutos</h2>
+    <div class="sub">Snapshot de equity (cash + posiciones abiertas), más reciente primero. 🟢 = después de arrancar con plata real.</div>
+    <div class="table-scroll">
+    {render_snapshots(d['snapshots'])}
+    </div>
+  </div>
+
   <div class="card">
     <h2>Posiciones abiertas ({d['open_n']})</h2>
     {render_open(d['open_positions'])}
@@ -276,8 +325,8 @@ footer {{ margin-top: 32px; color: var(--ash); font-size: 0.78rem; border-top: 1
 
 
 def main():
-    state, events = load()
-    d = build(state, events)
+    state, events, snapshots = load()
+    d = build(state, events, snapshots)
     html = render(d)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(html)
