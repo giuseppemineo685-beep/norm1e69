@@ -1353,24 +1353,13 @@
   ],
   "total_invested_live": 0.0,
   "started_at": 1789392196.9295511,
-  "n_detected": 1005,
-  "n_copied": 811,
+  "n_detected": 1016,
+  "n_copied": 821,
   "n_skipped_min": 0,
   "n_skipped_slippage": 185,
   "n_skipped_cap_seguridad": 0,
   "n_orders_failed": 0,
   "delays_measured": [
-    168.48758482933044,
-    142.48758482933044,
-    130.48758482933044,
-    129.48758482933044,
-    124.48758482933044,
-    96.48758482933044,
-    93.48758482933044,
-    91.48758482933044,
-    85.48758482933044,
-    79.48758482933044,
-    58.487584829330444,
     54.487584829330444,
     52.487584829330444,
     52.487584829330444,
@@ -2359,9 +2348,20 @@
     193.6442105770111,
     190.6442105770111,
     265.21543049812317,
-    266.1840670108795
+    266.1840670108795,
+    301.2978346347809,
+    297.2978346347809,
+    292.2978346347809,
+    291.2978346347809,
+    282.2978346347809,
+    276.2978346347809,
+    276.2978346347809,
+    271.2978346347809,
+    270.2978346347809,
+    267.2978346347809,
+    265.2978346347809
   ],
-  "paper_cash": 3543.4657315934282,
+  "paper_cash": 3444.2257315926054,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xc884965f3e89a4b6a863ca4a289e478a456d6509ed7fb316067c327c50035422": {
@@ -2379,13 +2379,38 @@
       },
       "cost": 0.0,
       "title": "LoL: EXILE esports vs eSuba - Game 2 Winner"
+    },
+    "0x67fdd6bbad58b86e37cc2ab95c730c510953795ec6fc0b512e8eb6fc419ffcc3": {
+      "shares": {
+        "Up": 50.0,
+        "Down": 0.0
+      },
+      "cost": 1.0,
+      "title": "Ethereum Up or Down - September 14, 11:55AM-12:00PM ET"
+    },
+    "0xbb473fb5c5918730c6a3fb572dcb81146aee6995663a5e17d78d1cad0b0c60be": {
+      "shares": {
+        "Up": 30.11594202898551,
+        "Down": 254.3571428600815
+      },
+      "cost": 92.00000000082284,
+      "title": "Bitcoin Up or Down - September 14, 11:45AM-12:00PM ET"
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2557.774255001613,
+  "paper_b_cash": 2556.774255001613,
   "paper_b_start_cash": 2500.0,
-  "paper_b_positions": {},
-  "n_paper_b_skipped_slippage": 147,
+  "paper_b_positions": {
+    "0x67fdd6bbad58b86e37cc2ab95c730c510953795ec6fc0b512e8eb6fc419ffcc3": {
+      "shares": {
+        "Up": 50.0,
+        "Down": 0.0
+      },
+      "cost": 1.0,
+      "title": "Ethereum Up or Down - September 14, 11:55AM-12:00PM ET"
+    }
+  },
+  "n_paper_b_skipped_slippage": 156,
   "n_paper_b_skipped_cash": 0,
   "_live_flag": false
 }
