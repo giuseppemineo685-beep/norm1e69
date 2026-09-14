@@ -36,8 +36,9 @@ echo "starting live_trader.py in background for ${DURATION}s (LIVE=${LIVE:-0})"
 python3 -u scripts/live_trader.py > /tmp/live_trader.log 2>&1 &
 BOT_PID=$!
 
+PUBLISH_INTERVAL="${PUBLISH_INTERVAL:-5}"  # segundos entre publicaciones (commit+push a git)
 while [ "$(date +%s)" -lt "$END" ]; do
-  sleep 60
+  sleep "$PUBLISH_INTERVAL"
   publish_once
   if ! kill -0 "$BOT_PID" 2>/dev/null; then
     echo "live_trader murio, mostrando log y reiniciando"
