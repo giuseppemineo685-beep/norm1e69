@@ -49,6 +49,12 @@ MAX_SLIPPAGE = 0.97  # fusible SOLO anti-glitch (precio corrupto/fuera de 0-1 co
 POLL_INTERVAL = 1
 RESOLVE_CHECK_INTERVAL = 15
 
+# columna de comparacion en el dashboard: un segundo papel en paralelo que
+# SI aplica el filtro de 25c como si fuera una decision real, para poder
+# comparar "con filtro" vs "sin filtro" con los mismos datos en vez de
+# adivinar. No afecta ni al papel principal ni a las ordenes reales.
+COMPARISON_SLIPPAGE = 0.25
+
 # capital de papel: validado por backtest sobre un dia real completo (3500
 # trades, 239 mercados) - cubre el pico real de exposicion simultanea
 # (~$1905) con margen, cero trades perdidos por falta de cash.
@@ -131,11 +137,20 @@ def load_state():
         "n_skipped_min": 0, "n_skipped_slippage": 0, "n_skipped_cap_seguridad": 0,
         "n_orders_failed": 0,
         "delays_measured": [],
-        # papel: corre siempre en paralelo, LIVE o no, para poder comparar
+        # papel SIN filtro: corre siempre en paralelo, LIVE o no, para poder
+        # comparar. Es el que representa "copia 1:1 de verdad".
         "paper_cash": PAPER_START_CASH,
         "paper_start_cash": PAPER_START_CASH,
         "paper_positions": {},  # {conditionId: {"Up":shares,"Down":shares,"cost":total,"title":str}}
         "n_paper_skipped_cash": 0,
+        # papel CON filtro de 25c: columna de comparacion, misma plata
+        # inicial, misma logica, pero descarta el trade si el precio se
+        # movio mas de COMPARISON_SLIPPAGE desde que ella compro.
+        "paper_b_cash": PAPER_START_CASH,
+        "paper_b_start_cash": PAPER_START_CASH,
+        "paper_b_positions": {},
+        "n_paper_b_skipped_slippage": 0,
+        "n_paper_b_skipped_cash": 0,
     }
 
 
@@ -175,27 +190,40 @@ def get_resolution(condition_id, cache):
         return None
 
 
-def settle_paper_positions(state, res_cache):
-    """El papel corre siempre (LIVE o no) para poder comparar. Liquida las
-    posiciones de papel cuyo mercado ya resolvio."""
+def _settle_one_book(state, res_cache, positions_key, cash_key, label, event_type):
     still_open = {}
-    for cid, pos in state["paper_positions"].items():
+    for cid, pos in state[positions_key].items():
         winner = get_resolution(cid, res_cache)
         if winner is None:
             still_open[cid] = pos
             continue
         payout = pos["shares"].get(winner, 0.0)
-        state["paper_cash"] += payout
+        state[cash_key] += payout
         pnl = payout - pos["cost"]
-        log(f"CIERRE (papel) {pos.get('title','')[:35]:35s} pnl=${pnl:+.2f}  paper_cash=${state['paper_cash']:.2f}")
-        append_log({"ts": time.time(), "type": "close_paper", "conditionId": cid, "winner": winner,
+        log(f"CIERRE ({label}) {pos.get('title','')[:35]:35s} pnl=${pnl:+.2f}  cash=${state[cash_key]:.2f}")
+        append_log({"ts": time.time(), "type": event_type, "conditionId": cid, "winner": winner,
                     "pnl": pnl, "cost": pos["cost"], "market_title": pos.get("title")})
-    state["paper_positions"] = still_open
+    state[positions_key] = still_open
 
 
-def process_new_trade(t, state, now, client):
+def settle_paper_positions(state, res_cache):
+    """El papel corre siempre (LIVE o no) para poder comparar. Liquida las
+    posiciones de ambos libros (sin filtro y con filtro de 25c) cuyo
+    mercado ya resolvio."""
+    _settle_one_book(state, res_cache, "paper_positions", "paper_cash", "papel", "close_paper")
+    _settle_one_book(state, res_cache, "paper_b_positions", "paper_b_cash", "papel-filtrado", "close_paper_b")
+
+
+def process_new_trade(t, state, now, client, price_cache):
     """Copia 1:1: mismo mercado, mismo lado, mismo monto en dolares que
-    ella gasto en ESTE trade puntual. Sin filtro, sin escalar."""
+    ella gasto en ESTE trade puntual. Sin filtro, sin escalar.
+
+    price_cache vive UN SOLO poll (se resetea en main()) - ella repite
+    mucho el mismo mercado en trades seguidos, asi que cachear el precio
+    de referencia por (mercado, lado) dentro del mismo poll evita pedirlo
+    de nuevo por cada trade individual, que era lo que hacia que el
+    procesamiento de un lote grande no diera abasto y el atraso creciera
+    sin parar en vez de mantenerse chico."""
     leader_cost = t["size"] * t["price"]
     state["n_detected"] += 1
     delay = now - t["timestamp"]
@@ -206,7 +234,10 @@ def process_new_trade(t, state, now, client):
     if copy_cost < POLY_MIN_TRADE:
         copy_cost = POLY_MIN_TRADE  # no se puede operar por debajo del minimo real de Polymarket
 
-    fill_ref_price = current_market_price(condition_id, outcome)
+    cache_key = (condition_id, outcome)
+    if cache_key not in price_cache:
+        price_cache[cache_key] = current_market_price(condition_id, outcome)
+    fill_ref_price = price_cache[cache_key]
     if fill_ref_price is None:
         fill_ref_price = t["price"]
     if abs(fill_ref_price - t["price"]) > MAX_SLIPPAGE:
@@ -214,8 +245,8 @@ def process_new_trade(t, state, now, client):
         log(f"SALTEADO (precio roto)  {t.get('title','')[:40]:40s} {outcome:5s} lider@{t['price']:.3f} ahora@{fill_ref_price:.3f}")
         return
 
-    # --- papel: corre siempre, para tener el registro completo de "a que
-    # precio y con cuanta demora hubiesemos entrado" incluso una vez en LIVE
+    # --- papel SIN filtro: corre siempre, para tener el registro completo
+    # de "a que precio y con cuanta demora hubiesemos entrado" (copia 1:1 real)
     if copy_cost > state["paper_cash"]:
         state["n_paper_skipped_cash"] += 1
     else:
@@ -224,6 +255,18 @@ def process_new_trade(t, state, now, client):
             condition_id, {"shares": {"Up": 0.0, "Down": 0.0}, "cost": 0.0, "title": t.get("title")})
         pos["shares"][outcome] += copy_cost / fill_ref_price
         pos["cost"] += copy_cost
+
+    # --- papel CON filtro de 25c: columna de comparacion en paralelo
+    if abs(fill_ref_price - t["price"]) > COMPARISON_SLIPPAGE:
+        state["n_paper_b_skipped_slippage"] += 1
+    elif copy_cost > state["paper_b_cash"]:
+        state["n_paper_b_skipped_cash"] += 1
+    else:
+        state["paper_b_cash"] -= copy_cost
+        pos_b = state["paper_b_positions"].setdefault(
+            condition_id, {"shares": {"Up": 0.0, "Down": 0.0}, "cost": 0.0, "title": t.get("title")})
+        pos_b["shares"][outcome] += copy_cost / fill_ref_price
+        pos_b["cost"] += copy_cost
 
     # --- real: solo si LIVE=1
     resp = {"dry_run": True}
@@ -272,6 +315,7 @@ def main():
         try:
             trades = http_get_json(f"https://data-api.polymarket.com/trades?user={WALLET}&limit=100", timeout=10)
             now = time.time()
+            price_cache = {}  # se resetea cada poll - ver docstring de process_new_trade
             for t in reversed(trades):
                 key = t["transactionHash"] + str(t["timestamp"]) + str(t["size"])
                 if key in seen:
@@ -279,7 +323,7 @@ def main():
                 seen.add(key)
                 if warm_start:
                     continue
-                process_new_trade(t, state, now, client)
+                process_new_trade(t, state, now, client, price_cache)
             if warm_start:
                 log(f"warm start: {len(seen)} trades existentes sembrados sin copiar")
             warm_start = False

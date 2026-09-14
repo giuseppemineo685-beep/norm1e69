@@ -39,9 +39,19 @@ def build(state, events):
     paper_equity = paper_cash + paper_open_cost
     paper_ret = ((paper_equity - paper_start) / paper_start * 100) if paper_start else 0.0
 
+    paper_b_cash = state.get("paper_b_cash", 0.0)
+    paper_b_start = state.get("paper_b_start_cash", 0.0)
+    paper_b_open_cost = sum(p["cost"] for p in state.get("paper_b_positions", {}).values())
+    paper_b_equity = paper_b_cash + paper_b_open_cost
+    paper_b_ret = ((paper_b_equity - paper_b_start) / paper_b_start * 100) if paper_b_start else 0.0
+
     closes = [e for e in events if e.get("type") == "close_paper"]
     wins = sum(1 for c in closes if c.get("pnl", 0) >= 0)
     win_rate = (wins / len(closes) * 100) if closes else None
+
+    closes_b = [e for e in events if e.get("type") == "close_paper_b"]
+    wins_b = sum(1 for c in closes_b if c.get("pnl", 0) >= 0)
+    win_rate_b = (wins_b / len(closes_b) * 100) if closes_b else None
 
     delays = state.get("delays_measured", [])
     delay_stats = {}
@@ -63,6 +73,14 @@ def build(state, events):
         "paper_equity": paper_equity,
         "paper_ret": paper_ret,
         "paper_open_n": len(state.get("paper_positions", {})),
+        "paper_b_cash": paper_b_cash,
+        "paper_b_start": paper_b_start,
+        "paper_b_equity": paper_b_equity,
+        "paper_b_ret": paper_b_ret,
+        "paper_b_open_n": len(state.get("paper_b_positions", {})),
+        "win_rate_b": win_rate_b,
+        "n_paper_b_skipped_slippage": state.get("n_paper_b_skipped_slippage", 0),
+        "n_paper_b_skipped_cash": state.get("n_paper_b_skipped_cash", 0),
         "n_detected": state.get("n_detected", 0),
         "n_copied": state.get("n_copied", 0),
         "n_skipped_slippage": state.get("n_skipped_slippage", 0),
@@ -82,8 +100,9 @@ def render_events(events):
     rows = []
     for e in events:
         ts = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(e["ts"])) + " UTC"
-        if e.get("type") == "close_paper":
+        if e.get("type") in ("close_paper", "close_paper_b"):
             cls = "good" if e.get("pnl", 0) >= 0 else "bad"
+            libro = "sin filtro" if e["type"] == "close_paper" else "con filtro 25¢"
             rows.append(f"""<tr>
               <td class="mono-sm">{esc(ts)}</td>
               <td>{esc(e.get('market_title','') or '')}</td>
@@ -92,7 +111,7 @@ def render_events(events):
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
               <td class="num">&mdash;</td>
-              <td class="pill {cls}">cierre (${e.get('pnl',0):+.2f})</td>
+              <td class="pill {cls}">cierre ({libro}) (${e.get('pnl',0):+.2f})</td>
             </tr>""")
             continue
         tag = "REAL" if e.get("live") else "papel"
@@ -137,6 +156,30 @@ def render(d):
     <span>&#9889;</span>
     <div>{mode_pill} &mdash; copia 1:1: mismo mercado, mismo lado, mismo monto en dólares que ella, sin filtro ni tope
     proporcional. El único tope es el capital disponible.</div>
+  </div>
+
+  <div class="card">
+    <h2>Con filtro vs sin filtro</h2>
+    <div class="sub">Dos carteras de papel en paralelo, mismo capital inicial ($2,500 c/u) — para comparar en vez de adivinar si conviene bloquear trades cuando el precio se movió mucho (25¢) desde que ella compró.</div>
+    <div class="table-scroll">
+    <table>
+      <tr><th></th><th>Equity</th><th>Retorno</th><th>Bloqueados por precio</th><th>Bloqueados por cash</th></tr>
+      <tr>
+        <td>Sin filtro (copia 1:1 real)</td>
+        <td class="num">${d['paper_equity']:.2f}</td>
+        <td class="num {'good' if d['paper_ret']>=0 else 'bad'}">{d['paper_ret']:+.2f}%</td>
+        <td class="num">{d['n_skipped_slippage']}</td>
+        <td class="num">{d['n_paper_skipped_cash']}</td>
+      </tr>
+      <tr>
+        <td>Con filtro (bloquea si se movió &gt;25¢)</td>
+        <td class="num">${d['paper_b_equity']:.2f}</td>
+        <td class="num {'good' if d['paper_b_ret']>=0 else 'bad'}">{d['paper_b_ret']:+.2f}%</td>
+        <td class="num">{d['n_paper_b_skipped_slippage']}</td>
+        <td class="num">{d['n_paper_b_skipped_cash']}</td>
+      </tr>
+    </table>
+    </div>
   </div>
 
   <div class="card">
