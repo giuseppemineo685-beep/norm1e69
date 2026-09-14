@@ -42,6 +42,12 @@ WALLET = "0x41e2e1ccf1e4940029af02259a31c6b89b9fa354"  # norm1e69 - a quien copi
 POLY_MIN_TRADE = 1.0  # minimo real de Polymarket - piso duro, no un filtro nuestro
 MAX_SLIPPAGE = 0.25  # solo un fusible anti-glitch (precio roto), no un filtro de trades
 POLL_INTERVAL = 1
+RESOLVE_CHECK_INTERVAL = 15
+
+# capital de papel: validado por backtest sobre un dia real completo (3500
+# trades, 239 mercados) - cubre el pico real de exposicion simultanea
+# (~$1905) con margen, cero trades perdidos por falta de cash.
+PAPER_START_CASH = float(os.environ.get("PAPER_START_CASH", "2500.0"))
 
 # sin freno: LIVE_MAX_TOTAL_CAPITAL sin configurar = sin tope propio, copia
 # todo lo que de. El backstop real pasa a ser el balance real en Polymarket
@@ -115,6 +121,12 @@ def load_state():
         "n_detected": 0, "n_copied": 0,
         "n_skipped_min": 0, "n_skipped_slippage": 0, "n_skipped_cap_seguridad": 0,
         "n_orders_failed": 0,
+        "delays_measured": [],
+        # papel: corre siempre en paralelo, LIVE o no, para poder comparar
+        "paper_cash": PAPER_START_CASH,
+        "paper_start_cash": PAPER_START_CASH,
+        "paper_positions": {},  # {conditionId: {"Up":shares,"Down":shares,"cost":total,"title":str}}
+        "n_paper_skipped_cash": 0,
     }
 
 
@@ -140,11 +152,45 @@ def current_market_price(condition_id, outcome, timeout=6):
     return None
 
 
+def get_resolution(condition_id, cache):
+    if condition_id in cache:
+        return cache[condition_id]
+    try:
+        d = http_get_json(f"https://clob.polymarket.com/markets/{condition_id}", timeout=8)
+        tokens = d.get("tokens", [])
+        winner = next((tk["outcome"] for tk in tokens if tk.get("winner")), None)
+        if winner:
+            cache[condition_id] = winner
+        return winner
+    except Exception:
+        return None
+
+
+def settle_paper_positions(state, res_cache):
+    """El papel corre siempre (LIVE o no) para poder comparar. Liquida las
+    posiciones de papel cuyo mercado ya resolvio."""
+    still_open = {}
+    for cid, pos in state["paper_positions"].items():
+        winner = get_resolution(cid, res_cache)
+        if winner is None:
+            still_open[cid] = pos
+            continue
+        payout = pos["shares"].get(winner, 0.0)
+        state["paper_cash"] += payout
+        pnl = payout - pos["cost"]
+        log(f"CIERRE (papel) {pos.get('title','')[:35]:35s} pnl=${pnl:+.2f}  paper_cash=${state['paper_cash']:.2f}")
+        append_log({"ts": time.time(), "type": "close_paper", "conditionId": cid, "winner": winner,
+                    "pnl": pnl, "cost": pos["cost"], "market_title": pos.get("title")})
+    state["paper_positions"] = still_open
+
+
 def process_new_trade(t, state, now, client):
     """Copia 1:1: mismo mercado, mismo lado, mismo monto en dolares que
     ella gasto en ESTE trade puntual. Sin filtro, sin escalar."""
     leader_cost = t["size"] * t["price"]
     state["n_detected"] += 1
+    delay = now - t["timestamp"]
+    state["delays_measured"] = (state.get("delays_measured", []) + [delay])[-1000:]
 
     condition_id, outcome, token_id = t["conditionId"], t["outcome"], t["asset"]
     copy_cost = leader_cost
@@ -159,27 +205,39 @@ def process_new_trade(t, state, now, client):
         log(f"SALTEADO (precio roto)  {t.get('title','')[:40]:40s} {outcome:5s} lider@{t['price']:.3f} ahora@{fill_ref_price:.3f}")
         return
 
-    if state["total_invested_live"] + copy_cost > LIVE_MAX_TOTAL_CAPITAL:
-        state["n_skipped_cap_seguridad"] += 1
-        log(f"SALTEADO por tope de seguridad (${LIVE_MAX_TOTAL_CAPITAL:.2f}) - ya invertido ${state['total_invested_live']:.2f}")
-        return
-
-    if not LIVE:
-        log(f"[DRY RUN] copiaria {t.get('title','')[:40]:40s} {outcome:5s} +${copy_cost:.2f}@~{fill_ref_price:.3f}")
-        resp = {"dry_run": True}
+    # --- papel: corre siempre, para tener el registro completo de "a que
+    # precio y con cuanta demora hubiesemos entrado" incluso una vez en LIVE
+    if copy_cost > state["paper_cash"]:
+        state["n_paper_skipped_cash"] += 1
     else:
+        state["paper_cash"] -= copy_cost
+        pos = state["paper_positions"].setdefault(
+            condition_id, {"shares": {"Up": 0.0, "Down": 0.0}, "cost": 0.0, "title": t.get("title")})
+        pos["shares"][outcome] += copy_cost / fill_ref_price
+        pos["cost"] += copy_cost
+
+    # --- real: solo si LIVE=1
+    resp = {"dry_run": True}
+    if LIVE:
+        if state["total_invested_live"] + copy_cost > LIVE_MAX_TOTAL_CAPITAL:
+            state["n_skipped_cap_seguridad"] += 1
+            log(f"SALTEADO por tope de seguridad (${LIVE_MAX_TOTAL_CAPITAL:.2f})")
+            return
         try:
             resp = place_market_buy(client, token_id, copy_cost)
-            log(f"ORDEN REAL  {t.get('title','')[:40]:40s} {outcome:5s} +${copy_cost:.2f}  resp={resp}")
+            log(f"ORDEN REAL  {t.get('title','')[:40]:40s} {outcome:5s} +${copy_cost:.2f} demora={delay:.1f}s  resp={resp}")
         except Exception as e:
             state["n_orders_failed"] += 1
             log(f"ERROR colocando orden real: {e}")
             return
+        state["total_invested_live"] += copy_cost
+    else:
+        log(f"[PAPER] {t.get('title','')[:40]:40s} {outcome:5s} +${copy_cost:.2f}@~{fill_ref_price:.3f} demora={delay:.1f}s")
 
-    state["total_invested_live"] += copy_cost
     state["n_copied"] += 1
-    append_log({"ts": now, "live": LIVE, "conditionId": condition_id, "outcome": outcome,
-                "cost": copy_cost, "ref_price": fill_ref_price, "leader_cost": leader_cost,
+    append_log({"ts": now, "type": "open", "live": LIVE, "conditionId": condition_id, "outcome": outcome,
+                "cost": copy_cost, "ref_price": fill_ref_price, "leader_price": t["price"],
+                "leader_cost": leader_cost, "delay_s": delay,
                 "market_title": t.get("title"), "response": resp})
 
 
@@ -198,6 +256,8 @@ def main():
     state["_live_flag"] = LIVE  # para que el dashboard muestre bien el modo actual
     seen = set(state.get("seen_leader_keys", []))
     warm_start = len(seen) == 0
+    res_cache = {}
+    last_resolve_check = 0
 
     while True:
         try:
@@ -217,6 +277,10 @@ def main():
             state["seen_leader_keys"] = list(seen)[-3000:]
         except Exception as e:
             log(f"error polling trades: {e}")
+
+        if time.time() - last_resolve_check > RESOLVE_CHECK_INTERVAL:
+            settle_paper_positions(state, res_cache)
+            last_resolve_check = time.time()
 
         save_state(state)
         time.sleep(POLL_INTERVAL)

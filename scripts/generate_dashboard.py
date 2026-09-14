@@ -107,7 +107,7 @@ def build(state, events, snapshots, live_state=None, live_events=None):
         "real_trading_started_at": REAL_TRADING_STARTED_AT,
         "owner_wallet": OWNER_WALLET,
         "live_state": live_state,
-        "live_recent": list(reversed(live_events or []))[:25],
+        "live_recent": list(reversed(live_events or [])),  # todos - el usuario pidio ver cada trade
     }
 
 
@@ -179,43 +179,71 @@ def render_live_card(d):
       <h2>Bot en vivo &mdash; norm1e69</h2>
       <p class="muted">Todavía no arrancó (o no se publicó ningún estado todavía).</p>
     </div>"""
-    live_on = ls.get("total_invested_live") is not None
     mode_pill = ('<span class="pill bad"><span class="pill-dot"></span> LIVE (plata real)</span>'
-                 if ls.get("_live_flag") else '<span class="pill accent"><span class="pill-dot"></span> dry-run (sin plata real)</span>')
+                 if ls.get("_live_flag") else '<span class="pill accent"><span class="pill-dot"></span> papel (sin plata real)</span>')
+
+    paper_cash = ls.get("paper_cash", 0.0)
+    paper_start = ls.get("paper_start_cash", 0.0)
+    paper_open_cost = sum(p["cost"] for p in ls.get("paper_positions", {}).values())
+    paper_equity = paper_cash + paper_open_cost
+    paper_ret = ((paper_equity - paper_start) / paper_start * 100) if paper_start else 0.0
+
+    delays = ls.get("delays_measured", [])
+    delay_txt = "todavía sin mediciones"
+    if delays:
+        s = sorted(delays)
+        delay_txt = (f"prom {sum(delays)/len(delays):.1f}s · mediana {s[len(s)//2]:.1f}s · "
+                     f"p90 {s[int(len(s)*0.9)]:.1f}s · máx {max(delays):.1f}s")
+
     rows = []
     for e in d.get("live_recent", []):
         ts = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(e["ts"])) + " UTC"
-        tag = "REAL" if e.get("live") else "dry-run"
+        if e.get("type") == "close_paper":
+            cls = "good" if e.get("pnl", 0) >= 0 else "bad"
+            rows.append(f"""<tr>
+              <td class="mono-sm">{esc(ts)}</td>
+              <td>{esc(e.get('market_title','') or '')}</td>
+              <td>&mdash;</td>
+              <td class="num">{e.get('cost',0):.2f}</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="num">&mdash;</td>
+              <td class="pill {cls}">cierre papel (${e.get('pnl',0):+.2f})</td>
+            </tr>""")
+            continue
+        tag = "REAL" if e.get("live") else "papel"
         rows.append(f"""<tr>
           <td class="mono-sm">{esc(ts)}</td>
           <td>{esc(e.get('market_title','') or '')}</td>
           <td>{esc(e.get('outcome',''))}</td>
           <td class="num">{e.get('cost',0):.2f}</td>
+          <td class="num">{e.get('ref_price',0):.3f}</td>
+          <td class="num">{e.get('leader_price',0):.3f}</td>
+          <td class="num">{e.get('delay_s',0):.1f}s</td>
           <td class="pill {'bad' if tag=='REAL' else 'pending'}">{tag}</td>
         </tr>""")
-    rows_html = "\n".join(rows) if rows else '<tr><td colspan="5" class="muted">Sin actividad todavía</td></tr>'
+    rows_html = "\n".join(rows) if rows else '<tr><td colspan="8" class="muted">Sin actividad todavía</td></tr>'
     return f"""<div class="card">
       <h2>Bot en vivo &mdash; norm1e69</h2>
-      <div class="sub">Ejecutor propio conectado directo a la API de Polymarket (sin Polycool). Wallet copiada:
-      <code class="mono-sm">{LIVE_TRADER_WALLET[:8]}&hellip;{LIVE_TRADER_WALLET[-6:]}</code>. {mode_pill}</div>
+      <div class="sub">Copia 1:1 (mismo mercado, mismo lado, mismo monto) conectado directo a la API de Polymarket.
+      Wallet copiada: <code class="mono-sm">{LIVE_TRADER_WALLET[:8]}&hellip;{LIVE_TRADER_WALLET[-6:]}</code>. {mode_pill}</div>
       <div class="table-scroll">
       <table>
-        <tr><th>Detectados</th><th>Copiados</th><th>Bajo mínimo</th><th>Bloqueados por slippage</th><th>Bloqueados por tope de seguridad</th><th>Órdenes fallidas</th><th>Invertido total</th></tr>
+        <tr><th>Equity papel</th><th>Cash papel</th><th>Retorno papel</th><th>Detectados</th><th>Copiados</th><th>Demora real</th></tr>
         <tr>
+          <td class="num">${paper_equity:.2f}</td>
+          <td class="num">${paper_cash:.2f}</td>
+          <td class="num {'good' if paper_ret>=0 else 'bad'}">{paper_ret:+.2f}%</td>
           <td class="num">{ls.get('n_detected',0)}</td>
           <td class="num">{ls.get('n_copied',0)}</td>
-          <td class="num">{ls.get('n_skipped_min',0)}</td>
-          <td class="num">{ls.get('n_skipped_slippage',0)}</td>
-          <td class="num">{ls.get('n_skipped_cap_seguridad',0)}</td>
-          <td class="num">{ls.get('n_orders_failed',0)}</td>
-          <td class="num">${ls.get('total_invested_live',0):.2f}</td>
+          <td class="mono-sm">{delay_txt}</td>
         </tr>
       </table>
       </div>
-      <div class="sub" style="margin-top:14px;">Actividad reciente del bot en vivo</div>
+      <div class="sub" style="margin-top:14px;">Todos los trades (mercado, lado, costo, precio al que entramos, precio de ella, demora en segundos)</div>
       <div class="table-scroll">
       <table>
-        <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Tipo</th></tr>
+        <tr><th>Hora</th><th>Mercado</th><th>Lado</th><th>Costo</th><th>Nuestro precio</th><th>Precio de ella</th><th>Demora</th><th>Tipo</th></tr>
         {rows_html}
       </table>
       </div>
