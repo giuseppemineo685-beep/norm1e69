@@ -4011,17 +4011,9 @@
     130.80012488365173,
     126.80012488365173
   ],
-  "paper_cash": 7229.095290613281,
+  "paper_cash": 7242.428623946614,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xd8636ae4a05c19e538b58126d9c423101d8d5f5c045157f08f2ee809e51a6051": {
-      "shares": {
-        "Up": 26.19047814229039,
-        "Down": 13.333333333333332
-      },
-      "cost": 19.0,
-      "title": "Bitcoin Up or Down - September 14, 4:45PM-4:50PM ET"
-    },
     "0x337660814671b3b3be6702c17b67b9a9841f6145c6ac87abb730df837f365518": {
       "shares": {
         "Up": 4.083333333333334
@@ -4078,17 +4070,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2982.0521578488774,
+  "paper_b_cash": 2993.718824515544,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xd8636ae4a05c19e538b58126d9c423101d8d5f5c045157f08f2ee809e51a6051": {
-      "shares": {
-        "Up": 19.047620467120286,
-        "Down": 11.666666666666666
-      },
-      "cost": 15.0,
-      "title": "Bitcoin Up or Down - September 14, 4:45PM-4:50PM ET"
-    },
     "0x337660814671b3b3be6702c17b67b9a9841f6145c6ac87abb730df837f365518": {
       "shares": {
         "Up": 2.0
