@@ -126,8 +126,9 @@ def make_client():
 
 
 def get_usdc_balance(client):
-    from polymarket import AssetType
-    bal = client.get_balance_allowance(asset_type=AssetType.COLLATERAL)
+    # AssetType es un Literal["COLLATERAL", ...], no un enum con atributos -
+    # el string va directo (AssetType.COLLATERAL tira AttributeError).
+    bal = client.get_balance_allowance(asset_type="COLLATERAL")
     # la API devuelve el balance en unidades de 10^6 (USDC tiene 6 decimales)
     return bal.balance / 1_000_000
 
