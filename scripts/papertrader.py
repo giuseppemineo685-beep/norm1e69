@@ -31,7 +31,7 @@ MAX_PER_TRADE = 10.0
 MAX_SLIPPAGE = 0.10  # 10 centavos - misma guardia configurada en la cuenta real de Polycool
 POLY_MIN_TRADE = 1.0
 START_CASH = 600.0
-POLL_INTERVAL = 3  # segundos - lo mas rapido que tiene sentido para una sola wallet
+POLL_INTERVAL = 1  # segundos - bajado de 3s a 1s: sus trades reales mostraron demoras de 1-3s
 RESOLVE_CHECK_INTERVAL = 15
 SNAPSHOT_INTERVAL = 600  # 10 minutos - performance a lo largo del tiempo
 
