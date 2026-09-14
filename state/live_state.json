@@ -1146,14 +1146,6 @@
       "cost": 4.08,
       "title": "Bitcoin Up or Down - September 14, 10:00AM-10:15AM ET"
     },
-    "0x7221a029e25155c30985482b0e7ba735dafca1326bacf3b8897ce2cd89a5cf1c": {
-      "shares": {
-        "Up": 0.0,
-        "Down": 10.274509803921568
-      },
-      "cost": 5.24,
-      "title": "Solana Up or Down - September 14, 10:10AM-10:15AM ET"
-    },
     "0x0e6b642d0c17cb3c2c822287efdadced06f86b1c2038221f9d3ae2417b7c2b9c": {
       "shares": {
         "Up": 0.0,
