@@ -1520,17 +1520,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 1629.7443000002447,
+  "paper_b_cash": 1636.2257819174258,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x8d283c745981e4056726347744563c88de736bb4c6224df9c479dc8236d1a58e": {
-      "shares": {
-        "Up": 18.510204746488988,
-        "Down": 6.481481917181099
-      },
-      "cost": 12.57,
-      "title": "Ethereum Up or Down - September 14, 10:40AM-10:45AM ET"
-    },
     "0xe5a49c8275fb84263f0e58acd9670bd1590f0254281ba6127f4dfb2fd6afc576": {
       "shares": {
         "Up": 29.999999999528335,
