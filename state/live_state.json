@@ -4011,7 +4011,7 @@
     82.18570375442505,
     79.18570375442505
   ],
-  "paper_cash": 6939.192063393256,
+  "paper_cash": 6979.451805809923,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x23a609c4514619cf0d16f9003040eccf10d07ff3a9d0fc8df1a6003991f499c0": {
@@ -4021,22 +4021,6 @@
       },
       "cost": 27.0,
       "title": "Ethereum Up or Down - September 14, 8:00PM-8:05PM ET"
-    },
-    "0xbb6769b9754fe809fa1eb282fbc2698989fb2b8ee31bdfd3d79599ff4be28604": {
-      "shares": {
-        "Up": 35.71428750000009,
-        "Down": 89.99999999999999
-      },
-      "cost": 52.0,
-      "title": "Bitcoin Up or Down - September 14, 8:00PM-8:05PM ET"
-    },
-    "0xc8ce4752e06ce82c30b806627aa62dc6f7dda1ac7dae631ab0004a9a549c6bfc": {
-      "shares": {
-        "Down": 11.538461538461537,
-        "Up": 4.5454549166666975
-      },
-      "cost": 6.0,
-      "title": "Solana Up or Down - September 14, 8:00PM-8:05PM ET"
     },
     "0xa45b9fc9d0389a11866ee19c976c2f5e9f57990180dd4e7364a2b128d309bf8a": {
       "shares": {
@@ -4096,33 +4080,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2738.994496577194,
+  "paper_b_cash": 2791.695131322427,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xbb6769b9754fe809fa1eb282fbc2698989fb2b8ee31bdfd3d79599ff4be28604": {
-      "shares": {
-        "Up": 34.285716000000086,
-        "Down": 86.66666666666666
-      },
-      "cost": 50.0,
-      "title": "Bitcoin Up or Down - September 14, 8:00PM-8:05PM ET"
-    },
-    "0xc8ce4752e06ce82c30b806627aa62dc6f7dda1ac7dae631ab0004a9a549c6bfc": {
-      "shares": {
-        "Down": 11.538461538461537,
-        "Up": 3.030303277777798
-      },
-      "cost": 5.0,
-      "title": "Solana Up or Down - September 14, 8:00PM-8:05PM ET"
-    },
-    "0x23a609c4514619cf0d16f9003040eccf10d07ff3a9d0fc8df1a6003991f499c0": {
-      "shares": {
-        "Up": 44.444448000000286,
-        "Down": 15.384615467455623
-      },
-      "cost": 24.0,
-      "title": "Ethereum Up or Down - September 14, 8:00PM-8:05PM ET"
-    },
     "0xa45b9fc9d0389a11866ee19c976c2f5e9f57990180dd4e7364a2b128d309bf8a": {
       "shares": {
         "Up": 13.513513513513512,
