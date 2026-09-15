@@ -56,11 +56,23 @@ def build(out_path):
         ws["A1"] = ("Validacion forward en PAPER TRADING -- SOLO simulacion, datos completamente "
                     "nuevos (mercados posteriores al arranque del validador). No copy-trading, no "
                     "ejecucion real. Estimated gross P&L. Puede tener cero mercados resueltos todavia.")
+        ws["A2"] = ("Hubo una caida de VPN/acceso a Polymarket durante el arranque de esta validacion. "
+                    "Los mercados anteriores a la recuperacion quedan marcados PRE_VPN_RECOVERY -- NO se "
+                    "borraron (siguen visibles en Signals/Resolutions), pero 'Strategy Summary' (metricas "
+                    "oficiales) SOLO cuenta mercados OFFICIAL. Ver tag_vpn_recovery_cohort.py.")
         cutoff = pdb.get_meta("validator_started_at")
         n_markets = conn.execute("SELECT count(*) c FROM paper_markets").fetchone()["c"]
         n_decisions = conn.execute("SELECT count(*) c FROM paper_decisions").fetchone()["c"]
         n_hedge_fills = conn.execute("SELECT count(*) c FROM paper_hedge_fills").fetchone()["c"]
         n_resolutions = conn.execute("SELECT count(*) c FROM paper_resolutions").fetchone()["c"]
+        vpn_recovery = pdb.get_meta("vpn_recovery_ts")
+        cohort_start = pdb.get_meta("official_cohort_start_ts")
+        n_pre_vpn = conn.execute(
+            "SELECT count(*) c FROM paper_markets WHERE validation_cohort='PRE_VPN_RECOVERY'"
+        ).fetchone()["c"]
+        n_official = conn.execute(
+            "SELECT count(*) c FROM paper_markets WHERE validation_cohort='OFFICIAL'"
+        ).fetchone()["c"]
         overview = [
             ("generado_utc", fmt(time.time())),
             ("validador_arrancado_utc", fmt(float(cutoff)) if cutoff else None),
@@ -68,31 +80,37 @@ def build(out_path):
             ("decisiones_tomadas", n_decisions),
             ("coberturas_ejecutadas", n_hedge_fills),
             ("resoluciones_registradas", n_resolutions),
+            ("vpn_recovery_utc", fmt(float(vpn_recovery)) if vpn_recovery else None),
+            ("cohorte_oficial_arranca_utc", fmt(float(cohort_start)) if cohort_start else None),
+            ("mercados_PRE_VPN_RECOVERY_excluidos_de_metricas", n_pre_vpn),
+            ("mercados_OFFICIAL_en_metricas", n_official),
         ]
         ws.append(["campo", "valor"])
         for k, v in overview:
             ws.append([k, v])
-        ws.freeze_panes = "A2"
+        ws.freeze_panes = "A4"
 
         # ---------- Signals (decisions) ----------
         ws = wb.create_sheet("Signals")
         rows = _rows(conn, """
             SELECT pd.strategy, pm.market_title, pd.asset_symbol, pd.condition_id, pd.token_id,
-                   pd.decision_timestamp_utc, pd.underlying_open_price, pd.underlying_price_at_60s,
-                   pd.distance_pct, pd.signal_present, pd.side_chosen, pd.snapshot_id, pd.best_ask,
-                   pd.executable_price, pd.shares, pd.capital_usd, pd.fill_status, pd.skip_or_partial_reason
+                   pm.validation_cohort, pd.decision_timestamp_utc, pd.underlying_open_price,
+                   pd.underlying_price_at_60s, pd.distance_pct, pd.signal_present, pd.side_chosen,
+                   pd.snapshot_id, pd.best_ask, pd.executable_price, pd.shares, pd.capital_usd,
+                   pd.fill_status, pd.skip_or_partial_reason
             FROM paper_decisions pd JOIN paper_markets pm ON pm.condition_id = pd.condition_id
             ORDER BY pd.decision_timestamp_utc
         """)
         for r in rows:
             r["decision_time_human"] = fmt(r["decision_timestamp_utc"])
         headers = ["strategy", "market_title", "asset_symbol", "condition_id", "token_id",
-                   "decision_timestamp_utc", "decision_time_human", "underlying_open_price",
-                   "underlying_price_at_60s", "distance_pct", "signal_present", "side_chosen",
-                   "snapshot_id", "best_ask", "executable_price", "shares", "capital_usd",
+                   "validation_cohort", "decision_timestamp_utc", "decision_time_human",
+                   "underlying_open_price", "underlying_price_at_60s", "distance_pct", "signal_present",
+                   "side_chosen", "snapshot_id", "best_ask", "executable_price", "shares", "capital_usd",
                    "fill_status", "skip_or_partial_reason"]
         _write_table(ws, headers, rows, start_row=3)
-        ws["A1"] = "Cada mercado x cada estrategia (las 3 evaluan exactamente el mismo universo)."
+        ws["A1"] = ("Cada mercado x cada estrategia (las 3 evaluan exactamente el mismo universo). "
+                    "Incluye PRE_VPN_RECOVERY -- no se oculta nada acá, solo se excluye de Strategy Summary.")
         ws.freeze_panes = "A4"
 
         # ---------- Hedges ----------
@@ -127,22 +145,29 @@ def build(out_path):
         # ---------- Resolutions (P&L, ROI, drawdown por estrategia) ----------
         ws = wb.create_sheet("Resolutions")
         res_rows = _rows(conn, """
-            SELECT pr.*, pm.market_title, pm.asset_symbol FROM paper_resolutions pr
+            SELECT pr.*, pm.market_title, pm.asset_symbol, pm.validation_cohort FROM paper_resolutions pr
             JOIN paper_markets pm ON pm.condition_id = pr.condition_id
             ORDER BY pr.resolved_at_utc
         """)
         for r in res_rows:
             r["resolved_at_human"] = fmt(r["resolved_at_utc"])
-        headers_r = ["strategy", "condition_id", "market_title", "asset_symbol", "winner",
-                     "resolved_at_human", "capital_deployed_usd", "payout_usd", "pnl_usd", "roi"]
+        headers_r = ["strategy", "condition_id", "market_title", "asset_symbol", "validation_cohort",
+                     "winner", "resolved_at_human", "capital_deployed_usd", "payout_usd", "pnl_usd", "roi"]
         _write_table(ws, headers_r, res_rows, start_row=3)
-        ws["A1"] = "Resoluciones registradas (vacio hasta que cierren mercados y el collector conozca el winner)."
+        ws["A1"] = ("Resoluciones registradas, TODAS (incluye PRE_VPN_RECOVERY, sin ocultar nada) -- "
+                    "vacio hasta que cierren mercados y el collector conozca el winner.")
         ws.freeze_panes = "A4"
 
-        # ---------- Strategy Summary ----------
+        # ---------- Strategy Summary (SOLO cohorte OFFICIAL) ----------
         ws = wb.create_sheet("Strategy Summary")
+        official_res_rows = [r for r in res_rows if r["validation_cohort"] == "OFFICIAL"]
+        n_excluded = len(res_rows) - len(official_res_rows)
+        ws["A2"] = (f"Metricas OFICIALES: solo cohorte OFFICIAL (mercados post-recuperacion de VPN, "
+                    f">= {fmt(float(cohort_start)) if cohort_start else '?'}). "
+                    f"{n_excluded} resoluciones PRE_VPN_RECOVERY excluidas de este resumen (visibles, sin "
+                    f"borrar, en la pestaña Resolutions).")
         by_strategy = defaultdict(list)
-        for r in res_rows:
+        for r in official_res_rows:
             by_strategy[r["strategy"]].append(r)
         summary_rows = []
         for strategy in ("MOMENTUM_PURE", "MOMENTUM_PARTIAL_HEDGE", "POLYMARKET_FAVORITE_BASELINE"):

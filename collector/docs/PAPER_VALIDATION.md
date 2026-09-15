@@ -156,6 +156,31 @@ resoluciones todavía):
 python3 export_paper_validation.py
 ```
 
+## Incidente: caída de VPN al arranque (2026-09-15)
+
+El collector perdió acceso a Polymarket entre **20:44:37 UTC** y **21:28:55
+UTC** (errores de `orderbook`/`market_trades`, reconexiones de WS) — la
+caída se solapó con el arranque del paper validator (cutoff 21:14:36 UTC),
+así que los primeros 9 mercados descubiertos ocurrieron total o
+parcialmente durante la interrupción.
+
+Se agregó la columna `paper_markets.validation_cohort` (`tag_vpn_recovery_cohort.py`,
+migración aditiva, `ALTER TABLE ... ADD COLUMN ... DEFAULT 'OFFICIAL'` —
+segura para un proceso ya corriendo, sin necesidad de reiniciarlo):
+
+- **PRE_VPN_RECOVERY**: mercados con `open_time_utc` anterior al primer
+  mercado de 5 minutos **completo** posterior a la recuperación
+  (`21:30:00 UTC` — el mercado 21:25-21:30 ya estaba en curso cuando volvió
+  el acceso, así que no cuenta como "completo post-recovery"). 9 mercados.
+- **OFFICIAL**: todo lo demás, incluidas todas las filas nuevas que el
+  proceso siga insertando de acá en adelante (el `DEFAULT` de la columna ya
+  resuelve esto sin tocar código).
+
+Nada se borró. `export_paper_validation.py`: la pestaña **Signals** y
+**Resolutions** muestran ambas cohortes (con la columna visible); la
+pestaña **Strategy Summary** (P&L/ROI/drawdown oficiales) filtra
+exclusivamente a `OFFICIAL`.
+
 ## Limitaciones conocidas
 
 - Un solo checkpoint de validación forward — cuantos más mercados nuevos
