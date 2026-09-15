@@ -158,15 +158,29 @@ def top_levels(levels: list, n=ORDERBOOK_DEPTH_LEVELS, reverse=False):
     return sorted_levels[:n]
 
 
+# data-api.polymarket.com está detrás de un CDN que cachea las respuestas:
+# medido, repetir el mismo request devolvía `x-cache: HIT` con `age` creciendo
+# (42s, 45s, 48s, 52s...), o sea que el poll veía una foto vieja del feed de
+# trades. El header `Cache-Control: no-cache` es IGNORADO por el CDN. Un
+# parámetro único por request sí lo evita (desaparecen los headers de cache),
+# a costa de no reusar caché -- al ritmo de 1 req/s es un costo aceptable y es
+# exactamente el mismo volumen de requests que ya hacíamos.
+# Esta es la causa medida de buena parte del retraso de detección que se
+# atribuía al procesamiento del bot.
+def _cache_buster() -> str:
+    return f"{time.time():.3f}"
+
+
 def get_leader_trades(wallet: str, limit: int = 100, offset: int = 0) -> list:
-    params = {"user": wallet, "limit": limit}
+    params = {"user": wallet, "limit": limit, "_cb": _cache_buster()}
     if offset:
         params["offset"] = offset
     return _get(f"{DATA_API_BASE}/trades", **params)
 
 
 def get_market_trades(condition_id: str, limit: int = 100) -> list:
-    return _get(f"{DATA_API_BASE}/trades", market=condition_id, limit=limit)
+    return _get(f"{DATA_API_BASE}/trades", market=condition_id, limit=limit,
+                _cb=_cache_buster())
 
 
 def get_market_by_condition_id(condition_id: str) -> Market | None:

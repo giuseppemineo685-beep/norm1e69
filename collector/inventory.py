@@ -46,16 +46,22 @@ def _recompute_market(conn, condition_id):
     for t in trades_full:
         outcome, price, shares = t["outcome"], t["price"], t["shares"]
 
-        # Un trade incompleto (price/shares nulos -- puede pasar con filas de
-        # BACKFILL cuyo origen no guardaba el tamaño) NO debe tumbar el
-        # recálculo de todo el mercado: sin este guard, una sola fila mala
-        # dejaba `leader_inventory_timeline` vacía para siempre en ese
-        # mercado, porque el recálculo entero crasheaba en cada pasada.
-        if price is None or shares is None or outcome not in ("Up", "Down"):
+        # Outcome que no es Up/Down: el líder también opera mercados de esports
+        # (ej. "LoL: EXILE vs eSuba"), donde el concepto de inventario
+        # emparejado UP/DOWN no aplica. Es esperado, no una anomalía -- se
+        # saltea en silencio (loguearlo llenaba collector_events con cientos de
+        # eventos idénticos en cada pasada de recálculo).
+        if outcome not in ("Up", "Down"):
+            continue
+
+        # Price/shares nulos SÍ es un problema de datos y se registra. Pero no
+        # debe tumbar el recálculo de todo el mercado: sin este guard, una sola
+        # fila mala dejaba `leader_inventory_timeline` vacía para siempre en
+        # ese mercado, porque el recálculo entero crasheaba en cada pasada.
+        if price is None or shares is None:
             db.log_event("inventory", "skipped_incomplete_trade",
                          {"trade_id": t["id"], "condition_id": condition_id,
-                          "has_price": price is not None, "has_shares": shares is not None,
-                          "outcome": outcome})
+                          "has_price": price is not None, "has_shares": shares is not None})
             continue
 
         if first_ts is None:
