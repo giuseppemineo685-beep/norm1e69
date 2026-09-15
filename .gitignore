@@ -5,6 +5,9 @@ __pycache__/
 collector/data.db
 collector/data.db-wal
 collector/data.db-shm
+collector/paper_validation.db
+collector/paper_validation.db-wal
+collector/paper_validation.db-shm
 collector/venv/
 collector/.env
 collector/export/
