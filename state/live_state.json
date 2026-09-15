@@ -4011,7 +4011,7 @@
     39.88280653953552,
     37.88280653953552
   ],
-  "paper_cash": 6915.889622712205,
+  "paper_cash": 6934.642691529715,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0xdb6c9c0d98b6fdcd347306c0af1e240f20887e6ca305daa2c84d18d36c31a775": {
@@ -4029,14 +4029,6 @@
       },
       "cost": 25.0,
       "title": "Ethereum Up or Down - September 14, 8:20PM-8:25PM ET"
-    },
-    "0x0d3b9fc4f5997837010a10b2422825915886d03228e6ef41d110f72a66e5d6e5": {
-      "shares": {
-        "Down": 12.068965517241379,
-        "Up": 18.75306881751028
-      },
-      "cost": 16.0,
-      "title": "Solana Up or Down - September 14, 8:20PM-8:25PM ET"
     },
     "0x1238f2129f4034541f35d28ad892435de981f44b0ddd45a33e94514b72e7c35e": {
       "shares": {
@@ -4103,7 +4095,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2710.015705932312,
+  "paper_b_cash": 2728.768774749822,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0xdb6c9c0d98b6fdcd347306c0af1e240f20887e6ca305daa2c84d18d36c31a775": {
@@ -4121,14 +4113,6 @@
       },
       "cost": 15.0,
       "title": "Ethereum Up or Down - September 14, 8:20PM-8:25PM ET"
-    },
-    "0x0d3b9fc4f5997837010a10b2422825915886d03228e6ef41d110f72a66e5d6e5": {
-      "shares": {
-        "Down": 6.8965517241379315,
-        "Up": 18.75306881751028
-      },
-      "cost": 13.0,
-      "title": "Solana Up or Down - September 14, 8:20PM-8:25PM ET"
     },
     "0x1238f2129f4034541f35d28ad892435de981f44b0ddd45a33e94514b72e7c35e": {
       "shares": {
