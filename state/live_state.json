@@ -4011,25 +4011,9 @@
     74.02319073677063,
     2.02319073677063
   ],
-  "paper_cash": 7362.412859160684,
+  "paper_cash": 7373.3171721103,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xe235a7cc38250233a5fd340fb0fa18c9fae489c6ecc93a6fa23074257ee00766": {
-      "shares": {
-        "Up": 57.91756902608106,
-        "Down": 3.0303030303030303
-      },
-      "cost": 7.0,
-      "title": "Bitcoin Up or Down - September 14, 10:15PM-10:30PM ET"
-    },
-    "0x41b275ce623d83cf2dd6afaba6783b7169071d8337b876d3654f83e6c2c8b952": {
-      "shares": {
-        "Down": 12.0,
-        "Up": 7.874009919313051
-      },
-      "cost": 11.0,
-      "title": "Solana Up or Down - September 14, 10:25PM-10:30PM ET"
-    },
     "0x64afe7a2664236184f3c37c2129a615c2623fea4a70f80e4591314714c3b55f8": {
       "shares": {
         "Up": 47.91668200000491,
@@ -4097,13 +4081,6 @@
   "paper_b_cash": 2926.3371869870844,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xe235a7cc38250233a5fd340fb0fa18c9fae489c6ecc93a6fa23074257ee00766": {
-      "shares": {
-        "Up": 57.91756902608106
-      },
-      "cost": 4.0,
-      "title": "Bitcoin Up or Down - September 14, 10:15PM-10:30PM ET"
-    },
     "0x64afe7a2664236184f3c37c2129a615c2623fea4a70f80e4591314714c3b55f8": {
       "shares": {
         "Up": 22.91667400000235,
