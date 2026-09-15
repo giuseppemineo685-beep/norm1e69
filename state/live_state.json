@@ -4011,7 +4011,7 @@
     3.8408186435699463,
     3.8408186435699463
   ],
-  "paper_cash": 7441.153373655368,
+  "paper_cash": 7463.549700586094,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x39c0d2ddb0690f6fecd7ff1d16843395a0205c393e33317271a4540bff383150": {
@@ -4021,22 +4021,6 @@
       },
       "cost": 11.0,
       "title": "Solana Up or Down - September 15, 3:15AM-3:20AM ET"
-    },
-    "0xcec7c98d5d77699782ba958509912aa89b14dfecee7a2c169597853f9d5e7f20": {
-      "shares": {
-        "Up": 16.1463269307264,
-        "Down": 16.091954022988503
-      },
-      "cost": 16.0,
-      "title": "Ethereum Up or Down - September 15, 3:15AM-3:20AM ET"
-    },
-    "0x5d5a45d1c05f9eea12be9b18189fa3859b2e84def821aa787594221ad5ad79b0": {
-      "shares": {
-        "Down": 35.0,
-        "Up": 6.25
-      },
-      "cost": 12.0,
-      "title": "Bitcoin Up or Down - September 15, 3:15AM-3:20AM ET"
     },
     "0xa097e6715a55e9a022ea3b039825ced51b6a3820c63ee8ef62c81567031a8a1e": {
       "shares": {
@@ -4118,7 +4102,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2809.3843790266287,
+  "paper_b_cash": 2820.8716141755367,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x39c0d2ddb0690f6fecd7ff1d16843395a0205c393e33317271a4540bff383150": {
@@ -4128,22 +4112,6 @@
       },
       "cost": 10.0,
       "title": "Solana Up or Down - September 15, 3:15AM-3:20AM ET"
-    },
-    "0xcec7c98d5d77699782ba958509912aa89b14dfecee7a2c169597853f9d5e7f20": {
-      "shares": {
-        "Up": 5.237235148908146,
-        "Down": 6.896551724137931
-      },
-      "cost": 6.0,
-      "title": "Ethereum Up or Down - September 15, 3:15AM-3:20AM ET"
-    },
-    "0x5d5a45d1c05f9eea12be9b18189fa3859b2e84def821aa787594221ad5ad79b0": {
-      "shares": {
-        "Down": 30.0,
-        "Up": 6.25
-      },
-      "cost": 11.0,
-      "title": "Bitcoin Up or Down - September 15, 3:15AM-3:20AM ET"
     },
     "0xa097e6715a55e9a022ea3b039825ced51b6a3820c63ee8ef62c81567031a8a1e": {
       "shares": {
