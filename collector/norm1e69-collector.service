@@ -1,0 +1,28 @@
+[Unit]
+Description=norm1e69 research collector (leader trades + market data, read-only, no trading)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/norm1e69/collector
+EnvironmentFile=-/root/norm1e69/collector/.env
+ExecStart=/root/norm1e69/collector/venv/bin/python3 -u run_collector.py
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=0
+
+# SIGTERM primero (manejado en run_collector.py), matanza forzosa a los 15s
+# si no cierra solo
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# Logs van al journal de systemd (rotacion ya la maneja journald, ver
+# /etc/systemd/journald.conf SystemMaxUse= si se quiere acotar el tamano).
+# Ver logs con: journalctl -u norm1e69-collector -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

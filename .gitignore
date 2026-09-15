@@ -1,2 +1,13 @@
 __pycache__/
 *.pyc
+
+# collector: SQLite es la fuente de verdad, no se versiona
+collector/data.db
+collector/data.db-wal
+collector/data.db-shm
+collector/venv/
+collector/.env
+collector/export/
+
+collector/*.log
+collector/.pytest_cache/
