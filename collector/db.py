@@ -75,6 +75,109 @@ CREATE TABLE IF NOT EXISTS leader_trades (
 CREATE INDEX IF NOT EXISTS idx_leader_trades_condition ON leader_trades(condition_id);
 CREATE INDEX IF NOT EXISTS idx_leader_trades_wallet_ts ON leader_trades(leader_wallet, source_timestamp_utc);
 
+-- ====================================================================
+-- FASE 1 -- backfill histórico controlado (leader_history_backfill.py)
+-- Aditivo y separado de leader_trades: la tabla de arriba y sus filas NO
+-- se tocan. leader_trades_raw/backfill_pages/backfill_runs son un ledger
+-- append-only (nunca se borra); leader_trades_v2 + leader_trade_raw_links
+-- son DERIVADOS y reconstruibles desde el ledger crudo (canonicalize()
+-- puede borrarlos y recalcularlos con seguridad, a diferencia de todo lo
+-- demás en este schema).
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS backfill_runs (
+    run_id TEXT PRIMARY KEY,
+    origin TEXT NOT NULL,             -- 'DATA_API_HISTORY' (única origin de esta fase)
+    leader_wallet TEXT NOT NULL,
+    started_at REAL NOT NULL,
+    finished_at REAL,
+    status TEXT NOT NULL,             -- 'running'|'completed_exhausted'|'completed_safety_limit'|'failed'
+    terminal_condition TEXT,          -- 'empty_page'|'repeated_page'|'retry_exhausted'|NULL
+    page_size INTEGER NOT NULL,
+    safety_limit_pages INTEGER NOT NULL,
+    pages_requested INTEGER NOT NULL DEFAULT 0,
+    pages_succeeded INTEGER NOT NULL DEFAULT 0,
+    pages_failed INTEGER NOT NULL DEFAULT 0,
+    last_offset_completed INTEGER,    -- checkpoint: la próxima página resume desde acá
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS backfill_pages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL REFERENCES backfill_runs(run_id),
+    page_index INTEGER NOT NULL,
+    attempt_number INTEGER NOT NULL,  -- >1 = reintento de la misma página
+    offset_requested INTEGER NOT NULL,
+    limit_requested INTEGER NOT NULL,
+    request_url TEXT,
+    request_params_json TEXT,
+    request_started_at REAL NOT NULL,
+    response_received_at REAL,
+    http_status INTEGER,
+    cache_age_s REAL,
+    cache_status TEXT,                -- x-cache / cf-cache-status
+    response_headers_json TEXT,
+    response_body_raw TEXT,           -- body HTTP verbatim (fuente de verdad byte-exacta)
+    response_body_sha256 TEXT,
+    normalized_page_fingerprint TEXT, -- hash del contenido parseado, para detectar página repetida
+    n_rows_parsed INTEGER,
+    error TEXT,
+    UNIQUE (run_id, page_index, attempt_number)
+);
+CREATE INDEX IF NOT EXISTS idx_backfill_pages_run ON backfill_pages(run_id);
+
+CREATE TABLE IF NOT EXISTS leader_trades_raw (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_id INTEGER REFERENCES backfill_pages(id),
+    origin TEXT NOT NULL,
+    row_position_in_page INTEGER,
+    natural_key TEXT NOT NULL,        -- wallet|tx_hash|condition_id|token_id|side|price|shares|ts
+    parsed_payload TEXT NOT NULL,     -- parseado y re-serializado: preservación SEMÁNTICA,
+                                       -- no byte-verbatim (eso vive en backfill_pages.response_body_raw)
+    fetched_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ltraw_natural_key ON leader_trades_raw(natural_key);
+CREATE INDEX IF NOT EXISTS idx_ltraw_page ON leader_trades_raw(page_id);
+
+CREATE TABLE IF NOT EXISTS leader_trades_v2 (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    leader_wallet TEXT NOT NULL,
+    transaction_hash TEXT,
+    condition_id TEXT,
+    market_slug TEXT,
+    market_title TEXT,
+    asset_symbol TEXT,
+    token_id TEXT,
+    outcome TEXT,
+    side TEXT,
+    price REAL,
+    shares REAL,
+    usdc_amount REAL,
+    source_timestamp_utc REAL NOT NULL,
+    natural_key TEXT NOT NULL,
+    multiplicity_index INTEGER NOT NULL,  -- 1..multiplicity_total dentro del grupo de natural_key
+    multiplicity_total INTEGER NOT NULL,  -- máxima multiplicidad legítima vista EN UNA sola respuesta
+    dedup_ambiguous INTEGER NOT NULL DEFAULT 0,  -- 1 si multiplicity_total>1 (no se puede saber
+                                                  -- con certeza qué observación cruda es cuál instancia)
+    origin TEXT NOT NULL,
+    run_id TEXT,                      -- run que estableció la multiplicidad (página testigo)
+    created_at REAL NOT NULL,
+    UNIQUE (natural_key, multiplicity_index)
+);
+CREATE INDEX IF NOT EXISTS idx_ltv2_natural_key ON leader_trades_v2(natural_key);
+CREATE INDEX IF NOT EXISTS idx_ltv2_wallet_ts ON leader_trades_v2(leader_wallet, source_timestamp_utc);
+
+CREATE TABLE IF NOT EXISTS leader_trade_raw_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    canonical_trade_id INTEGER NOT NULL REFERENCES leader_trades_v2(id),
+    raw_row_id INTEGER NOT NULL REFERENCES leader_trades_raw(id),
+    link_reason TEXT NOT NULL,        -- 'witness' (fijó la multiplicidad) | 'repeat_observation'
+                                       -- (misma observación vista de nuevo por solape/reintento)
+    UNIQUE (canonical_trade_id, raw_row_id)
+);
+CREATE INDEX IF NOT EXISTS idx_links_canonical ON leader_trade_raw_links(canonical_trade_id);
+CREATE INDEX IF NOT EXISTS idx_links_raw ON leader_trade_raw_links(raw_row_id);
+
 CREATE TABLE IF NOT EXISTS market_trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source_timestamp_utc REAL NOT NULL,

@@ -4,6 +4,7 @@ plus underlying-price sources. No private key, no order placement anywhere
 in this module -- everything here is either a public GET or a read-only
 WebSocket subscription.
 """
+import hashlib
 import json
 import re
 import time
@@ -207,6 +208,48 @@ def get_leader_trades(wallet: str, limit: int = 100, offset: int = 0,
     if with_meta:
         return _get_with_meta(f"{DATA_API_BASE}/trades", **params)
     return _get(f"{DATA_API_BASE}/trades", **params)
+
+
+def get_leader_trades_page_raw(wallet: str, limit: int = 100, offset: int = 0,
+                                bust_cache: bool = True, timeout: int = 15) -> dict:
+    """Captura HTTP completa de una página de /trades para el ledger crudo del
+    backfill histórico -- a diferencia de get_leader_trades()/_get_with_meta()
+    (que usa el poller en vivo y NO se toca), esta nunca descarta el body ni
+    levanta excepción: siempre devuelve un dict, con error=None si salió bien
+    o error=<detalle> si no, para que el caller decida reintentos."""
+    params = {"user": wallet, "limit": limit}
+    if offset:
+        params["offset"] = offset
+    if bust_cache:
+        params["_cb"] = _cache_buster()
+    request_started_at = time.time()
+    try:
+        r = _session.get(f"{DATA_API_BASE}/trades", params=params, timeout=timeout)
+    except requests.RequestException as e:
+        return {
+            "request_url": None, "request_params": params,
+            "request_started_at": request_started_at, "response_received_at": time.time(),
+            "http_status": None, "headers": {}, "body_text": None,
+            "body_sha256": None, "rows": None, "error": str(e),
+        }
+    response_received_at = time.time()
+    body_text = r.text
+    body_sha256 = hashlib.sha256(body_text.encode("utf-8")).hexdigest()
+    rows = None
+    error = None
+    if not r.ok:
+        error = f"HTTP {r.status_code}"
+    else:
+        try:
+            rows = r.json()
+        except ValueError as e:
+            error = f"respuesta no-JSON: {e}"
+    return {
+        "request_url": r.url, "request_params": params,
+        "request_started_at": request_started_at, "response_received_at": response_received_at,
+        "http_status": r.status_code, "headers": dict(r.headers), "body_text": body_text,
+        "body_sha256": body_sha256, "rows": rows, "error": error,
+    }
 
 
 def get_market_trades(condition_id: str, limit: int = 100) -> list:

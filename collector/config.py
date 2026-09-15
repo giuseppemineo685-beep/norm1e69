@@ -56,3 +56,11 @@ MAX_GAP_FILL_PAGES = 20
 # más reciente; para traer historia vieja está `backfill.py --api`, que es
 # explícito.
 MAX_GAP_SECONDS_TO_AUTOFILL = 600
+
+# --- Backfill histórico controlado (leader_history_backfill.py) ---
+# Circuit breaker generoso, no una condición terminal: si se llega a este tope
+# de páginas sin haber visto página vacía / página repetida / límite duro de la
+# API, la corrida se reporta explícitamente como NO probada exhaustiva (ver
+# backfill_runs.status='completed_safety_limit'), nunca como historia completa.
+HISTORY_BACKFILL_SAFETY_LIMIT_PAGES = 5000
+HISTORY_BACKFILL_MAX_RETRIES_PER_PAGE = 5
