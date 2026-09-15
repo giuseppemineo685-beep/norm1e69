@@ -4088,25 +4088,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2786.745897049851,
+  "paper_b_cash": 2793.8479378661777,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xf59214294d2a4bc73c0e940e38b597fb295d48fd3581828afaf2b0f6d381fe74": {
-      "shares": {
-        "Down": 2.0,
-        "Up": 10.220126190577991
-      },
-      "cost": 3.0,
-      "title": "Bitcoin Up or Down - September 14, 9:00PM-9:15PM ET"
-    },
-    "0x25c41d66bb1722c878b2df3bb0abd5b40b97405a67b59ed898bef96824dfb44f": {
-      "shares": {
-        "Up": 5.1020408163265305,
-        "Down": 75.0
-      },
-      "cost": 8.0,
-      "title": "Ethereum Up or Down - September 14, 9:10PM-9:15PM ET"
-    },
     "0x3048fa8f5d9276c1248193ef6078577b52dc895592cbf62768ee08e0c63e02f2": {
       "shares": {
         "Down": 10.144927928796488,
