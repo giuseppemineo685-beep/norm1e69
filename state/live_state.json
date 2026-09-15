@@ -4102,7 +4102,7 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2923.2947749724954,
+  "paper_b_cash": 2954.3758564903915,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
     "0x4b043fef4575933b078e9fdf983e3e0c15105881897d13c29e9a2e11844ac213": {
@@ -4127,14 +4127,6 @@
       },
       "cost": 3.0,
       "title": "Bitcoin Up or Down - September 15, 5:30AM-5:45AM ET"
-    },
-    "0x44598c4cb3a3dc261bb676285ccb908e8b0b617945409e6b963b457a3e848446": {
-      "shares": {
-        "Up": 31.081081517896276,
-        "Down": 41.37931034482759
-      },
-      "cost": 35.0,
-      "title": "Bitcoin Up or Down - September 15, 5:35AM-5:40AM ET"
     },
     "0x25e3a07ed63487301d87af6be2b83b05dd910237fd03b6e9a93ff4b3e2629025": {
       "shares": {
