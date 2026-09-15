@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS leader_trades (
     source_timestamp_utc REAL NOT NULL,   -- leader_trade_timestamp (de la fuente)
     received_at_utc REAL NOT NULL,        -- = api_received_at (compat)
     api_received_at REAL,                 -- instante en que llegó la respuesta HTTP
+    request_started_at REAL,              -- instante en que se lanzó la request
     collector_processed_at REAL,          -- instante en que se escribió esta fila
     cdn_age_s REAL,                       -- header `age` del CDN, si vino cacheada
     is_startup_batch INTEGER DEFAULT 0,   -- 1 = vino en el primer poll (historia previa
@@ -78,7 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_leader_trades_wallet_ts ON leader_trades(leader_w
 CREATE TABLE IF NOT EXISTS market_trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source_timestamp_utc REAL NOT NULL,
-    received_at_utc REAL NOT NULL,
+    received_at_utc REAL NOT NULL,    -- instante en que llegó ESTA respuesta
+    request_started_at REAL,
     condition_id TEXT NOT NULL,
     token_id TEXT,
     outcome TEXT,
@@ -94,7 +96,8 @@ CREATE INDEX IF NOT EXISTS idx_market_trades_condition ON market_trades(conditio
 CREATE TABLE IF NOT EXISTS orderbook_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source_timestamp_utc REAL,       -- from the WS/book payload if present
-    received_at_utc_ms REAL NOT NULL,
+    received_at_utc_ms REAL NOT NULL, -- instante en que llegó ESTA respuesta (por request)
+    request_started_at REAL,          -- instante en que se lanzó ESTA request
     condition_id TEXT NOT NULL,
     token_id TEXT NOT NULL,
     outcome TEXT,
@@ -131,7 +134,13 @@ CREATE TABLE IF NOT EXISTS underlying_prices (
     distance_from_open_abs REAL,
     distance_from_open_pct REAL,
     seconds_to_close REAL,
-    condition_id TEXT                 -- which 5-min window this reading belongs to, if any
+    condition_id TEXT,                -- which 5-min window this reading belongs to, if any
+    request_started_at REAL,          -- instante en que se lanzó la request
+    open_price_method TEXT,           -- cómo se obtuvo market_open_reference_price:
+                                       -- 'first_observation_after_open' = NO es el precio de
+                                       -- apertura real del mercado, es la primera lectura que
+                                       -- alcanzamos a tomar tras detectar la ventana
+    open_price_observation_delay_s REAL  -- segundos entre la apertura de la ventana y esa lectura
 );
 CREATE INDEX IF NOT EXISTS idx_underlying_asset_ts ON underlying_prices(asset_symbol, received_at_utc);
 
@@ -151,9 +160,18 @@ CREATE TABLE IF NOT EXISTS leader_inventory_timeline (
     surplus_shares REAL NOT NULL,
     coverage_ratio REAL,               -- matched_shares / max(up_shares, down_shares)
     matched_cost REAL NOT NULL,
-    guaranteed_profit REAL NOT NULL,   -- matched_shares*1 - matched_cost (see inventory.py docstring)
+    paired_edge REAL NOT NULL,         -- matched_shares*1 - matched_cost: beneficio de la
+                                        -- PORCIÓN emparejada, ignorando el sobrante
+    portfolio_floor_pnl REAL NOT NULL, -- min(up,down) - (up_cost + down_cost): peor caso de
+                                        -- TODA la posición (el sobrante puede valer 0)
+    guaranteed_profit REAL,            -- DEPRECADO: alias histórico de paired_edge
     directional_exposure_shares REAL NOT NULL,
-    time_to_hedge_second_leg_s REAL,   -- NULL until the second side is first touched
+    time_to_first_opposite_trade_s REAL, -- primera compra del lado contrario. NO implica
+                                          -- cobertura completa: es solo el primer toque
+    time_to_coverage_threshold_s REAL,   -- tiempo hasta alcanzar COVERAGE_THRESHOLD real
+    coverage_threshold_used REAL,
+    n_sell_trades_excluded INTEGER DEFAULT 0, -- SELLs vistos en este mercado y excluidos
+    time_to_hedge_second_leg_s REAL,   -- DEPRECADO: alias de time_to_first_opposite_trade_s
     UNIQUE (after_trade_id)
 );
 CREATE INDEX IF NOT EXISTS idx_inventory_condition ON leader_inventory_timeline(condition_id);
@@ -173,8 +191,16 @@ CREATE TABLE IF NOT EXISTS trade_context (
                                            --   NO qué hay detrás. depth_* y executable_price
                                            --   quedan en NULL, nunca en 0.
                                            -- NULL = sin contexto disponible.
-    snapshot_age_s REAL,                  -- antigüedad del snapshot usado (siempre >= 0:
-                                           -- solo se usan snapshots EN O ANTES del instante)
+    snapshot_age_s REAL,                  -- antigüedad del snapshot del lado del líder
+                                           -- (siempre >= 0: solo snapshots EN O ANTES)
+    age_up_book_s REAL,                   -- antigüedad del snapshot del libro UP
+    age_down_book_s REAL,                 -- antigüedad del snapshot del libro DOWN
+    age_underlying_s REAL,                -- antigüedad de la lectura del subyacente
+    executable_shares_available REAL,     -- shares que la profundidad guardada podía llenar
+    executable_fill_ratio REAL,           -- available / target (1.0 = se podía llenar entero)
+    opposite_executable_price REAL,       -- VWAP ejecutable de la pierna CONTRARIA para el
+                                           -- MISMO tamaño objetivo (no solo su best ask)
+    opposite_fill_ratio REAL,
     best_bid_up REAL, best_ask_up REAL, depth_bid_up REAL, depth_ask_up REAL,
     best_bid_down REAL, best_ask_down REAL, depth_bid_down REAL, depth_ask_down REAL,
     spread_up REAL, spread_down REAL,
@@ -262,7 +288,23 @@ def connect():
 # ya existente. Nunca se borra ni se reescribe nada -- una db vieja sigue
 # siendo válida, solo gana columnas nuevas en NULL.
 MIGRATIONS = {
+    "orderbook_snapshots": {"request_started_at": "REAL"},
+    "market_trades": {"request_started_at": "REAL"},
+    "underlying_prices": {
+        "request_started_at": "REAL",
+        "open_price_method": "TEXT",
+        "open_price_observation_delay_s": "REAL",
+    },
+    "leader_inventory_timeline": {
+        "paired_edge": "REAL",
+        "portfolio_floor_pnl": "REAL",
+        "time_to_first_opposite_trade_s": "REAL",
+        "time_to_coverage_threshold_s": "REAL",
+        "coverage_threshold_used": "REAL",
+        "n_sell_trades_excluded": "INTEGER DEFAULT 0",
+    },
     "leader_trades": {
+        "request_started_at": "REAL",
         "api_received_at": "REAL",
         "collector_processed_at": "REAL",
         "cdn_age_s": "REAL",
@@ -271,6 +313,13 @@ MIGRATIONS = {
     "trade_context": {
         "underlying_available": "INTEGER DEFAULT 0",
         "context_quality": "TEXT",
+        "age_up_book_s": "REAL",
+        "age_down_book_s": "REAL",
+        "age_underlying_s": "REAL",
+        "executable_shares_available": "REAL",
+        "executable_fill_ratio": "REAL",
+        "opposite_executable_price": "REAL",
+        "opposite_fill_ratio": "REAL",
     },
     "markets": {
         "window_minutes": "INTEGER",

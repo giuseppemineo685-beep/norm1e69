@@ -47,6 +47,16 @@ def _get(url, timeout=10, **params):
     return r.json()
 
 
+def get_book_with_meta(token_id: str):
+    """Order book + el instante EXACTO en que llegó ESTA respuesta.
+
+    Antes se tomaba un único `now` antes de lanzar las 12 requests en paralelo
+    y se usaba para las 12 filas: eso adelantaba el timestamp de las respuestas
+    lentas hasta cientos de ms, y esos mismos timestamps son los que luego
+    deciden qué snapshot corresponde a cada trade."""
+    return _get_with_meta(f"{CLOB_BASE}/book", token_id=token_id)
+
+
 def _get_with_meta(url, timeout=10, **params):
     """Igual que _get pero devuelve (datos, meta) con la instrumentación que
     hace falta para medir latencia real de punta a punta:
@@ -55,6 +65,7 @@ def _get_with_meta(url, timeout=10, **params):
                          cacheada); None si no vino cacheada
       x_cache         -- HIT/MISS del CDN, si lo informa
     """
+    started_at = time.time()
     r = _session.get(url, params=params, timeout=timeout)
     received_at = time.time()
     r.raise_for_status()
@@ -64,6 +75,7 @@ def _get_with_meta(url, timeout=10, **params):
     except (TypeError, ValueError):
         age = None
     meta = {
+        "request_started_at": started_at,
         "api_received_at": received_at,
         "cdn_age_s": age,
         "x_cache": r.headers.get("x-cache") or r.headers.get("cf-cache-status"),
