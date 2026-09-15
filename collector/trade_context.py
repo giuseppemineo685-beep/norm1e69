@@ -19,19 +19,28 @@ SNAPSHOT_TOLERANCE_S = 2.5  # if no real snapshot is this close to the target in
 
 
 def _nearest_snapshot(conn, condition_id, token_id, target_ts):
+    """El ÚLTIMO snapshot con timestamp <= target_ts. Nunca uno posterior.
+
+    Antes se elegía el más cercano en valor absoluto, y eso podía devolver un
+    snapshot POSTERIOR al instante pedido: para los offsets <= 0 eso es
+    look-ahead bias directo (estarías alimentando un backtest con el libro de
+    después de la decisión), y para los offsets > 0 tampoco es el estado "a
+    ese momento". La regla ahora es uniforme: el estado del libro tal como se
+    veía en o antes de ese instante."""
     row = conn.execute(
-        """SELECT * FROM orderbook_snapshots
+        """SELECT *, COALESCE(source_timestamp_utc, received_at_utc_ms/1000.0) AS ts
+           FROM orderbook_snapshots
            WHERE condition_id=? AND token_id=?
-           ORDER BY ABS(COALESCE(source_timestamp_utc, received_at_utc_ms/1000.0) - ?) ASC
+             AND COALESCE(source_timestamp_utc, received_at_utc_ms/1000.0) <= ?
+           ORDER BY ts DESC
            LIMIT 1""",
         (condition_id, token_id, target_ts),
     ).fetchone()
     if row is None:
         return None, None
-    actual_ts = row["source_timestamp_utc"] or (row["received_at_utc_ms"] / 1000.0)
-    age = abs(actual_ts - target_ts)
+    age = target_ts - row["ts"]          # siempre >= 0 por construcción
     if age > SNAPSHOT_TOLERANCE_S:
-        return None, age
+        return None, age                  # hay dato, pero demasiado viejo: no se usa
     return row, age
 
 
@@ -72,12 +81,15 @@ def _executable_price(conn, snapshot_id, target_shares):
 
 
 def _nearest_underlying(conn, asset_symbol, target_ts):
+    """Misma regla que el order book: la última lectura EN O ANTES del
+    instante pedido, nunca una posterior."""
     row = conn.execute(
-        """SELECT * FROM underlying_prices WHERE asset_symbol=?
-           ORDER BY ABS(received_at_utc - ?) ASC LIMIT 1""",
+        """SELECT * FROM underlying_prices
+           WHERE asset_symbol=? AND received_at_utc <= ?
+           ORDER BY received_at_utc DESC LIMIT 1""",
         (asset_symbol, target_ts),
     ).fetchone()
-    if row is None or abs(row["received_at_utc"] - target_ts) > SNAPSHOT_TOLERANCE_S:
+    if row is None or (target_ts - row["received_at_utc"]) > SNAPSHOT_TOLERANCE_S:
         return None
     return row
 
@@ -147,14 +159,16 @@ def _build_one(conn, trade):
 
         conn.execute(
             """INSERT OR IGNORE INTO trade_context
-               (leader_trade_id, offset_seconds, usable_for_backtest, context_available, snapshot_age_s,
+               (leader_trade_id, offset_seconds, usable_for_backtest, context_available,
+                underlying_available, snapshot_age_s,
                 best_bid_up, best_ask_up, depth_bid_up, depth_ask_up,
                 best_bid_down, best_ask_down, depth_bid_down, depth_ask_down,
                 spread_up, spread_down, underlying_price, underlying_distance_from_open_pct,
                 executable_price_for_leader_size, opposite_leg_price, combined_cost_to_pair,
                 leader_up_shares_snapshot, leader_down_shares_snapshot)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (trade_id, offset, 1 if offset <= 0 else 0, 1 if context_available else 0, own_age,
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (trade_id, offset, 1 if offset <= 0 else 0, 1 if context_available else 0,
+             1 if underlying is not None else 0, own_age,
              up_bid, up_ask, up_dbid, up_dask, down_bid, down_ask, down_dbid, down_dask,
              (up_ask - up_bid) if (up_ask is not None and up_bid is not None) else None,
              (down_ask - down_bid) if (down_ask is not None and down_bid is not None) else None,

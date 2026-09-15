@@ -159,7 +159,9 @@ CREATE TABLE IF NOT EXISTS trade_context (
     offset_seconds INTEGER NOT NULL,   -- one of -10,-5,-3,-1,0,1,3,5,10
     usable_for_backtest INTEGER NOT NULL, -- 0/1: false for offset > 0 (outcome, not input)
     context_available INTEGER NOT NULL,   -- 0/1: false if no real snapshot was close enough
-    snapshot_age_s REAL,                  -- |actual snapshot ts - target ts|, for QA
+    underlying_available INTEGER DEFAULT 0, -- 0/1: idem para el precio del subyacente
+    snapshot_age_s REAL,                  -- antigüedad del snapshot usado (siempre >= 0:
+                                           -- solo se usan snapshots EN O ANTES del instante)
     best_bid_up REAL, best_ask_up REAL, depth_bid_up REAL, depth_ask_up REAL,
     best_bid_down REAL, best_ask_down REAL, depth_bid_down REAL, depth_ask_down REAL,
     spread_up REAL, spread_down REAL,
@@ -247,6 +249,9 @@ def connect():
 # ya existente. Nunca se borra ni se reescribe nada -- una db vieja sigue
 # siendo válida, solo gana columnas nuevas en NULL.
 MIGRATIONS = {
+    "trade_context": {
+        "underlying_available": "INTEGER DEFAULT 0",
+    },
     "markets": {
         "window_minutes": "INTEGER",
     },
