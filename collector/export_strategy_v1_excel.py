@@ -19,6 +19,7 @@ from pathlib import Path
 
 import openpyxl
 
+import audit_strategy_v1 as aud
 import backtest_momentum_v1 as bt
 
 
@@ -77,6 +78,9 @@ def build(db_path, strategy_csv, out_path):
     if result is None:
         raise SystemExit("backtest no produjo resultado -- ver salida de consola")
 
+    print("\n" + "=" * 78 + "\nAUDITORIA FINAL (sin recalibrar)\n" + "=" * 78)
+    audit = aud.run(db_path)
+
     pattern_rows, pattern_meta = momentum_pattern_analysis(strategy_csv)
 
     wb = openpyxl.Workbook()
@@ -87,6 +91,11 @@ def build(db_path, strategy_csv, out_path):
     ws["A1"] = "V1 exploratoria -- NO copy-trading. La estrategia decide sola, mirando el mercado, no al lider."
     ws["A2"] = "TODOS los P&L de este archivo son ESTIMATED GROSS P&L: sin fees, sin slippage mas alla del " \
                "best_ask observado en el snapshot, sin riesgo de ejecucion real, sin redencion on-chain real."
+    ws["A3"] = ("HALLAZGO DE LA AUDITORIA: el baseline 'comprar el favorito por precio' (83 trades, mismo "
+                "universo TEST, sin ningun umbral) obtiene ROI 8.35% y 77.1% win rate -- igual o mejor que "
+                "V1 (63 trades, ROI 7.15%, 76.2%). El 100% de los trades de V1 son un subconjunto de los "
+                "del favorito, y coinciden de lado en el 85.7% de los casos. V1 NO demuestra una ventaja "
+                "clara sobre simplemente comprar lo que el mercado ya cree mas probable. Ver Baselines Comparison.")
     overview = [
         ("generado_utc", fmt(time.time())),
         ("db_usada", db_path),
@@ -104,11 +113,24 @@ def build(db_path, strategy_csv, out_path):
         ("TEST_win_rate_pct", round(result["test_result"]["win_rate"] * 100, 1) if result["test_result"]["win_rate"] else None),
         ("TEST_estimated_gross_pnl_usd", round(result["test_result"]["gross_pnl"], 2)),
         ("TEST_roi_estimated_pct", round(result["test_result"]["roi"] * 100, 2) if result["test_result"]["roi"] else None),
+        ("TEST_con_precio_ejecutable_real__fill_status", f"FULL={audit['n_full']} PARTIAL={audit['n_partial']} SKIPPED={audit['n_skipped']}"),
+        ("TEST_ejecutable__usd_desplegado_real", round(audit["usd_deployed_total"], 2)),
+        ("TEST_ejecutable__gross_pnl_usd", round(audit["pnl_exec_total"], 2)),
+        ("TEST_ejecutable__win_rate_pct", round(audit["n_wins_exec"] / len(audit["executable_trades"]) * 100, 1) if audit["executable_trades"] else None),
+        ("baseline_favorito__n_trades_pnl_roi", f"{audit['baseline_favorite']['n_trades']} / "
+         f"${audit['baseline_favorite'].get('gross_pnl_usd')} / {audit['baseline_favorite'].get('roi_pct')}%"),
+        ("baseline_sin_umbral__n_trades_pnl_roi", f"{audit['baseline_momentum_raw']['n_trades']} / "
+         f"${audit['baseline_momentum_raw'].get('gross_pnl_usd')} / {audit['baseline_momentum_raw'].get('roi_pct')}%"),
+        ("baseline_aleatorio__n_trades_pnl_roi", f"{audit['baseline_random']['n_trades']} / "
+         f"${audit['baseline_random'].get('gross_pnl_usd')} / {audit['baseline_random'].get('roi_pct')}% "
+         f"(seed={audit['random_seed']})"),
+        ("anti_lookahead_subyacente_violaciones", audit["viol_under"]),
+        ("anti_lookahead_snapshot_violaciones", audit["viol_snap"]),
     ]
     ws.append(["campo", "valor"])
     for k, v in overview:
         ws.append([k, v])
-    ws.freeze_panes = "A2"
+    ws.freeze_panes = "A5"
 
     # ---------- Trader Pattern Analysis ----------
     ws = wb.create_sheet("Trader Pattern Analysis")
@@ -153,25 +175,61 @@ def build(db_path, strategy_csv, out_path):
 
     # ---------- Backtest Test ----------
     ws = wb.create_sheet("Backtest Test")
-    ws["A1"] = ("Evaluacion UNICA sobre TEST con el umbral ya congelado desde TRAIN. Este es el resultado "
-                "que cuenta -- todo lo de arriba es solo calibracion.")
-    trade_rows = []
-    for c in result["test_trades_executed"]:
-        shares = bt.STAKE_USD / c["entry_price"]
-        won = c["side"] == c["winner"]
-        trade_rows.append({
-            "condition_id": c["condition_id"], "market_title": c["market_title"],
-            "asset_symbol": c["asset_symbol"], "decision_time_utc": fmt(c["decision_ts"]),
-            "distance_from_open_pct": round(c["distance_from_open_pct"], 4),
-            "side_chosen": c["side"], "entry_price": c["entry_price"], "shares": round(shares, 4),
-            "stake_usd": bt.STAKE_USD, "winner": c["winner"], "won": won,
-            "payoff_usd": round(shares * 1.0, 4) if won else 0.0,
-            "gross_pnl_usd": round((shares * 1.0 if won else 0.0) - bt.STAKE_USD, 4),
-        })
-    next_row = _write_table(ws, ["condition_id", "market_title", "asset_symbol", "decision_time_utc",
-                                   "distance_from_open_pct", "side_chosen", "entry_price", "shares",
-                                   "stake_usd", "winner", "won", "payoff_usd", "gross_pnl_usd"],
-                             trade_rows, start_row=3)
+    ws["A1"] = ("Los 63 trades TEST, individualmente. Dos modelos de precio de entrada uno al lado del otro: "
+                "'simple' (best_ask, asume fill completo -- el de la corrida anterior) y 'executable' "
+                "(recorre profundidad real para llenar $10; FULL/PARTIAL/SKIPPED, nunca asume fill).")
+    headers = ["condition_id", "market_title", "decision_time_utc", "asset_symbol",
+               "distance_from_open_pct", "signal_side", "best_ask", "depth_available_usd",
+               "fill_status", "shares_simulated_simple", "shares_filled_executable",
+               "usd_deployed_executable", "vwap_executable", "winner", "won",
+               "pnl_simple_usd", "pnl_executable_usd"]
+    _write_table(ws, headers, audit["detail_rows"], start_row=3)
+    ws.freeze_panes = "A4"
+
+    # ---------- Exclusion Funnel ----------
+    ws = wb.create_sheet("Exclusion Funnel")
+    ws["A1"] = (f"Universo TEST completo (open_time_utc >= {fmt(audit['test_boundary_ts'])}, BTC/ETH/SOL "
+                f"5min resueltos): {audit['n_all_test_markets']} mercados. Por que cada uno NO termino "
+                f"siendo un trade ejecutado de V1 (o si lo fue).")
+    funnel_order = ["hueco_vpn", "contexto_incompleto_subyacente", "contexto_incompleto_orderbook",
+                     "sin_señal_distancia_cero", "sin_señal_bajo_umbral", "ventana_invalida",
+                     "liquidez_insuficiente_sin_profundidad", "señal_ejecutada_fill_parcial",
+                     "señal_ejecutada_fill_completo"]
+    funnel_labels = {
+        "hueco_vpn": "Excluido: hueco de order book (VPN caida, 14:58:30-16:35:18 UTC)",
+        "contexto_incompleto_subyacente": "Excluido: sin lectura de subyacente en el instante de decision",
+        "contexto_incompleto_orderbook": "Excluido: sin order book del lado señalado en el instante de decision",
+        "sin_señal_distancia_cero": "Excluido: sin señal (distancia del subyacente exactamente 0)",
+        "sin_señal_bajo_umbral": f"Excluido: señal por debajo del umbral ({result['chosen_threshold_pct']}%)",
+        "ventana_invalida": "Excluido: ventana de mercado invalida (decision cae fuera de la ventana)",
+        "liquidez_insuficiente_sin_profundidad": "Señal SI, pero SKIPPED por falta de profundidad real (solo top-of-book)",
+        "señal_ejecutada_fill_parcial": "Ejecutado con fill PARCIAL (profundidad insuficiente para $10 completos)",
+        "señal_ejecutada_fill_completo": "Ejecutado con fill COMPLETO -- estos son los trades reales de V1",
+    }
+    funnel_rows = [{"categoria": funnel_labels[k], "n_mercados": audit["exclusion_funnel"].get(k, 0)}
+                    for k in funnel_order]
+    funnel_rows.append({"categoria": "TOTAL", "n_mercados": sum(audit["exclusion_funnel"].values())})
+    _write_table(ws, ["categoria", "n_mercados"], funnel_rows, start_row=3)
+    ws.column_dimensions["A"].width = 75
+    ws.freeze_panes = "A4"
+
+    # ---------- Baselines Comparison ----------
+    ws = wb.create_sheet("Baselines Comparison")
+    ws["A1"] = ("Las 4 estrategias evaluadas sobre el MISMO universo de 83 candidatos TEST (subyacente + "
+                "order book disponibles en el instante de decision). Modelo de entrada 'simple' (best_ask, "
+                "fill asumido completo) para las 4, comparacion apples-to-apples. Aleatorio con seed fija "
+                f"({audit['random_seed']}), reproducible.")
+    baseline_rows = []
+    for ev in (audit["v1_eval"], audit["baseline_favorite"], audit["baseline_momentum_raw"], audit["baseline_random"]):
+        row = dict(ev)
+        exp = row.pop("exposure_by_asset", {})
+        for asset in ("BTC", "ETH", "SOL"):
+            row[f"n_trades_{asset}"] = exp.get(asset, 0)
+        baseline_rows.append(row)
+    headers2 = ["strategy", "n_trades", "n_wins", "win_rate_pct", "stake_total_usd", "gross_pnl_usd",
+                "roi_pct", "max_drawdown_usd", "n_trades_BTC", "n_trades_ETH", "n_trades_SOL"]
+    _write_table(ws, headers2, baseline_rows, start_row=3)
+    ws.column_dimensions["A"].width = 30
     ws.freeze_panes = "A4"
 
     # ---------- Results Summary ----------
@@ -221,6 +279,17 @@ def build(db_path, strategy_csv, out_path):
         "event_ts Y received_ts <= instante de decision, verificada con 0 violaciones).",
         "underlying = Binance spot, no la fuente exacta (Chainlink) que usa Polymarket para resolver "
         "-- documentado como aproximacion, no validado como identico.",
+        "CRITICO (auditoria final): el baseline 'comprar el favorito por precio de Polymarket' (83 "
+        "trades, sin ningun umbral ni logica de momentum) iguala o supera a V1 en el mismo universo TEST "
+        "(ROI 8.35% vs 7.15%, win rate 77.1% vs 76.2%). El 100% de los trades de V1 son un subconjunto "
+        "de los del favorito y coinciden de lado el 85.7% de las veces. V1 NO demuestra una ventaja "
+        "incremental clara sobre simplemente comprar lo que el precio de mercado ya implica como mas "
+        "probable -- el 'patron de momentum' descubierto podria ser, en gran parte, el propio mercado "
+        "ya siendo eficiente, no una ineficiencia explotable nueva.",
+        "Con precio ejecutable real (recorriendo profundidad, no asumiendo fill): 6 de los 63 trades de "
+        "V1 quedan SKIPPED por falta de profundidad registrada mas alla del top-of-book (no hay niveles "
+        "guardados en ese snapshot) -- ese P&L simplemente no se cuenta, no se le asume ni exito ni "
+        "fracaso. De los 57 restantes, el fill fue completo en todos (ninguno PARCIAL en esta muestra).",
     ]
     ws.append(["limitacion"])
     for l in limitations:
