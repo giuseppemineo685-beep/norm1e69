@@ -4011,17 +4011,9 @@
     18.874794244766235,
     8.874794244766235
   ],
-  "paper_cash": 7814.652705218794,
+  "paper_cash": 7829.870096523142,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0x4ddbe531aabaf350d90cc4d8e5a2c37ec04500df537a95524fe2599c54d74ef5": {
-      "shares": {
-        "Up": 12.674650698714668,
-        "Down": 15.217391304347828
-      },
-      "cost": 14.0,
-      "title": "Solana Up or Down - September 15, 6:10AM-6:15AM ET"
-    },
     "0x8ea465629ee7847bc8320fcaa962cfcc7419fa131b6448e5f875f860a63b9c7b": {
       "shares": {
         "Up": 16.848361318949213,
