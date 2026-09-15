@@ -4011,17 +4011,9 @@
     32.01237344741821,
     14.012373447418213
   ],
-  "paper_cash": 7693.587300936908,
+  "paper_cash": 7713.1806112405575,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0x6b0d9cfa9941ce9bc6136ad6759e06f83834ba06858ed815955c19f3c4b01a9e": {
-      "shares": {
-        "Up": 11.094031804371252,
-        "Down": 26.654411764705884
-      },
-      "cost": 16.0,
-      "title": "Solana Up or Down - September 15, 5:45AM-5:50AM ET"
-    },
     "0x613aa9e6fabd402aef3f216595894fa131f902a0aca5386c35fe5047c80323ea": {
       "shares": {
         "Down": 33.83723381825848,
@@ -4029,14 +4021,6 @@
       },
       "cost": 26.0,
       "title": "Bitcoin Up or Down - September 15, 5:45AM-5:50AM ET"
-    },
-    "0x7c5b6dcbda647834ebf784a76da4a68a7ef0b91c28c2f33dad91618dbfc905d0": {
-      "shares": {
-        "Down": 302.0,
-        "Up": 8.4992784992785
-      },
-      "cost": 15.0,
-      "title": "Ethereum Up or Down - September 15, 5:45AM-5:50AM ET"
     },
     "0x028840005e78c36dfb4777207fc66b14a77c449301fcad99a5718870680c3d53": {
       "shares": {
@@ -4094,17 +4078,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2899.0935756724457,
+  "paper_b_cash": 2915.6565829457923,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x6b0d9cfa9941ce9bc6136ad6759e06f83834ba06858ed815955c19f3c4b01a9e": {
-      "shares": {
-        "Up": 11.094031804371252,
-        "Down": 23.71323529411765
-      },
-      "cost": 15.0,
-      "title": "Solana Up or Down - September 15, 5:45AM-5:50AM ET"
-    },
     "0x613aa9e6fabd402aef3f216595894fa131f902a0aca5386c35fe5047c80323ea": {
       "shares": {
         "Down": 24.948344929369593,
@@ -4112,14 +4088,6 @@
       },
       "cost": 14.0,
       "title": "Bitcoin Up or Down - September 15, 5:45AM-5:50AM ET"
-    },
-    "0x7c5b6dcbda647834ebf784a76da4a68a7ef0b91c28c2f33dad91618dbfc905d0": {
-      "shares": {
-        "Down": 102.0,
-        "Up": 5.4689754689754695
-      },
-      "cost": 8.0,
-      "title": "Ethereum Up or Down - September 15, 5:45AM-5:50AM ET"
     },
     "0x028840005e78c36dfb4777207fc66b14a77c449301fcad99a5718870680c3d53": {
       "shares": {
