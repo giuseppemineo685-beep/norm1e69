@@ -47,6 +47,30 @@ def _get(url, timeout=10, **params):
     return r.json()
 
 
+def _get_with_meta(url, timeout=10, **params):
+    """Igual que _get pero devuelve (datos, meta) con la instrumentación que
+    hace falta para medir latencia real de punta a punta:
+      api_received_at -- instante en que llegó la respuesta HTTP
+      cdn_age_s       -- header `age` del CDN (segundos que la respuesta llevaba
+                         cacheada); None si no vino cacheada
+      x_cache         -- HIT/MISS del CDN, si lo informa
+    """
+    r = _session.get(url, params=params, timeout=timeout)
+    received_at = time.time()
+    r.raise_for_status()
+    age = r.headers.get("age")
+    try:
+        age = float(age) if age is not None else None
+    except (TypeError, ValueError):
+        age = None
+    meta = {
+        "api_received_at": received_at,
+        "cdn_age_s": age,
+        "x_cache": r.headers.get("x-cache") or r.headers.get("cf-cache-status"),
+    }
+    return r.json(), meta
+
+
 def _to_ts(s):
     if not s:
         return None
@@ -171,10 +195,17 @@ def _cache_buster() -> str:
     return f"{time.time():.3f}"
 
 
-def get_leader_trades(wallet: str, limit: int = 100, offset: int = 0) -> list:
-    params = {"user": wallet, "limit": limit, "_cb": _cache_buster()}
+def get_leader_trades(wallet: str, limit: int = 100, offset: int = 0,
+                       bust_cache: bool = True, with_meta: bool = False):
+    """bust_cache=False sirve para comparar A/B contra el endpoint tal cual lo
+    consulta cualquier otro cliente (ver compare_cache.py)."""
+    params = {"user": wallet, "limit": limit}
     if offset:
         params["offset"] = offset
+    if bust_cache:
+        params["_cb"] = _cache_buster()
+    if with_meta:
+        return _get_with_meta(f"{DATA_API_BASE}/trades", **params)
     return _get(f"{DATA_API_BASE}/trades", **params)
 
 

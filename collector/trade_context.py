@@ -44,8 +44,28 @@ def _nearest_snapshot(conn, condition_id, token_id, target_ts):
     return row, age
 
 
-def _depth(conn, snapshot_id, side):
+def _has_depth(conn, snapshot_id):
+    """¿Ese snapshot trae niveles de profundidad reales?
+
+    Los snapshots REST y los eventos WS `book` sí. Los eventos WS
+    `price_change` NO: solo traen top-of-book, así que de ellos no sabemos
+    qué hay detrás del mejor precio."""
     if snapshot_id is None:
+        return False
+    row = conn.execute(
+        "SELECT 1 FROM orderbook_levels WHERE snapshot_id=? LIMIT 1", (snapshot_id,)
+    ).fetchone()
+    return row is not None
+
+
+def _depth(conn, snapshot_id, side):
+    """Profundidad acumulada de un lado, o None si NO LA CONOCEMOS.
+
+    Devolver 0 cuando no hay niveles registrados sería afirmar "no hay
+    liquidez", que es una afirmación distinta y mucho más fuerte que "no
+    registramos la profundidad en ese instante". Solo se devuelve 0 cuando el
+    snapshot SÍ trae niveles y ese lado está genuinamente vacío."""
+    if snapshot_id is None or not _has_depth(conn, snapshot_id):
         return None
     row = conn.execute(
         "SELECT COALESCE(SUM(size), 0) s FROM orderbook_levels WHERE snapshot_id=? AND side=?",
@@ -140,6 +160,16 @@ def _build_one(conn, trade):
 
         context_available = own_snap is not None and other_snap is not None
         own_id = own_snap["id"] if own_snap else None
+        other_id = other_snap["id"] if other_snap else None
+
+        # Calidad del contexto: 'executable' solo si AMBOS lados traen niveles de
+        # profundidad reales (si no, el coste de armar el par no es calculable).
+        if not context_available:
+            context_quality = None
+        elif _has_depth(conn, own_id) and _has_depth(conn, other_id):
+            context_quality = "executable"
+        else:
+            context_quality = "indicative"
 
         best_bid_own = own_snap["best_bid"] if own_snap else None
         best_ask_own = own_snap["best_ask"] if own_snap else None
@@ -166,9 +196,9 @@ def _build_one(conn, trade):
                 spread_up, spread_down, underlying_price, underlying_distance_from_open_pct,
                 executable_price_for_leader_size, opposite_leg_price, combined_cost_to_pair,
                 leader_up_shares_snapshot, leader_down_shares_snapshot)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (trade_id, offset, 1 if offset <= 0 else 0, 1 if context_available else 0,
-             1 if underlying is not None else 0, own_age,
+             1 if underlying is not None else 0, context_quality, own_age,
              up_bid, up_ask, up_dbid, up_dask, down_bid, down_ask, down_dbid, down_dask,
              (up_ask - up_bid) if (up_ask is not None and up_bid is not None) else None,
              (down_ask - down_bid) if (down_ask is not None and down_bid is not None) else None,
@@ -209,3 +239,35 @@ def run():
 if __name__ == "__main__":
     db.init_db()
     run()
+
+
+def rebuild_all():
+    """Recalcula TODA la tabla derivada trade_context desde cero.
+
+    trade_context no contiene ningún dato capturado: se deriva enteramente de
+    leader_trades + orderbook_snapshots + underlying_prices, que no se tocan.
+    Recalcular es la forma correcta de aplicar una corrección de lógica (por
+    ejemplo, pasar de profundidad 0 a NULL cuando no se conoce) a las filas ya
+    construidas -- no es pérdida de datos.
+    """
+    with db.connect() as conn:
+        before = conn.execute("SELECT count(*) c FROM trade_context").fetchone()["c"]
+        conn.execute("DELETE FROM trade_context")
+    print(f"trade_context: {before} filas derivadas a recalcular "
+          f"(fuentes intactas: leader_trades, orderbook_snapshots, underlying_prices)")
+    total = 0
+    while True:
+        with db.connect() as conn:
+            pending = conn.execute(
+                """SELECT lt.* FROM leader_trades lt
+                   LEFT JOIN trade_context tc ON tc.leader_trade_id = lt.id AND tc.offset_seconds = 0
+                   WHERE tc.id IS NULL ORDER BY lt.source_timestamp_utc DESC LIMIT 500""").fetchall()
+            if not pending:
+                break
+            for trade in pending:
+                _build_one(conn, trade)
+                total += 1
+        print(f"  recalculados {total} trades...", flush=True)
+    with db.connect() as conn:
+        after = conn.execute("SELECT count(*) c FROM trade_context").fetchone()["c"]
+    print(f"listo: {after} filas")

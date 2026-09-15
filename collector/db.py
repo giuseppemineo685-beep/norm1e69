@@ -47,9 +47,14 @@ CREATE TABLE IF NOT EXISTS leader_trades (
     leader_wallet TEXT NOT NULL,
     trade_id TEXT,
     transaction_hash TEXT NOT NULL,
-    source_timestamp_utc REAL NOT NULL,
-    received_at_utc REAL NOT NULL,
-    detection_latency_ms REAL,
+    source_timestamp_utc REAL NOT NULL,   -- leader_trade_timestamp (de la fuente)
+    received_at_utc REAL NOT NULL,        -- = api_received_at (compat)
+    api_received_at REAL,                 -- instante en que llegó la respuesta HTTP
+    collector_processed_at REAL,          -- instante en que se escribió esta fila
+    cdn_age_s REAL,                       -- header `age` del CDN, si vino cacheada
+    is_startup_batch INTEGER DEFAULT 0,   -- 1 = vino en el primer poll (historia previa
+                                           -- al arranque): se EXCLUYE de latencia/cobertura
+    detection_latency_ms REAL,            -- api_received_at - leader_trade_timestamp
     condition_id TEXT,
     market_slug TEXT,
     market_title TEXT,
@@ -160,6 +165,14 @@ CREATE TABLE IF NOT EXISTS trade_context (
     usable_for_backtest INTEGER NOT NULL, -- 0/1: false for offset > 0 (outcome, not input)
     context_available INTEGER NOT NULL,   -- 0/1: false if no real snapshot was close enough
     underlying_available INTEGER DEFAULT 0, -- 0/1: idem para el precio del subyacente
+    context_quality TEXT,                 -- 'executable' = el snapshot trae niveles de
+                                           --   profundidad reales, así que executable_price y
+                                           --   combined_cost_to_pair son fiables.
+                                           -- 'indicative' = solo top-of-book (evento WS
+                                           --   price_change): se conoce el mejor bid/ask pero
+                                           --   NO qué hay detrás. depth_* y executable_price
+                                           --   quedan en NULL, nunca en 0.
+                                           -- NULL = sin contexto disponible.
     snapshot_age_s REAL,                  -- antigüedad del snapshot usado (siempre >= 0:
                                            -- solo se usan snapshots EN O ANTES del instante)
     best_bid_up REAL, best_ask_up REAL, depth_bid_up REAL, depth_ask_up REAL,
@@ -249,8 +262,15 @@ def connect():
 # ya existente. Nunca se borra ni se reescribe nada -- una db vieja sigue
 # siendo válida, solo gana columnas nuevas en NULL.
 MIGRATIONS = {
+    "leader_trades": {
+        "api_received_at": "REAL",
+        "collector_processed_at": "REAL",
+        "cdn_age_s": "REAL",
+        "is_startup_batch": "INTEGER DEFAULT 0",
+    },
     "trade_context": {
         "underlying_available": "INTEGER DEFAULT 0",
+        "context_quality": "TEXT",
     },
     "markets": {
         "window_minutes": "INTEGER",

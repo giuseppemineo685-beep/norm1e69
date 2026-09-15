@@ -47,18 +47,26 @@ def _market_info(conn, condition_id, cache_ttl_s=300):
     return info
 
 
-def _insert_trade(conn, t, now):
+def _insert_trade(conn, t, api_received_at, cdn_age_s=None, is_startup_batch=False):
+    """api_received_at = instante en que llegó la respuesta HTTP (no el instante
+    en que procesamos esta fila). La latencia de detección se mide contra ese,
+    que es lo más temprano en que pudimos haber sabido del trade."""
     condition_id = t.get("conditionId")
     slug, asset_symbol, open_ts, close_ts = _market_info(conn, condition_id) if condition_id \
         else (None, None, None, None)
     source_ts = float(t["timestamp"])
+    processed_at = time.time()
     row = (
         LEADER_WALLET,
         t.get("id"),
         t["transactionHash"],
         source_ts,
-        now,
-        (now - source_ts) * 1000.0,
+        api_received_at,
+        api_received_at,
+        processed_at,
+        cdn_age_s,
+        1 if is_startup_batch else 0,
+        (api_received_at - source_ts) * 1000.0,
         condition_id,
         slug,
         t.get("title"),
@@ -78,11 +86,12 @@ def _insert_trade(conn, t, now):
     cur = conn.execute(
         """INSERT OR IGNORE INTO leader_trades
            (leader_wallet, trade_id, transaction_hash, source_timestamp_utc, received_at_utc,
+            api_received_at, collector_processed_at, cdn_age_s, is_startup_batch,
             detection_latency_ms, condition_id, market_slug, market_title, asset_symbol,
             token_id, outcome, side, price, shares, usdc_amount,
             seconds_since_market_open, seconds_to_market_close, maker_taker, raw_payload,
             collection_method)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         row,
     )
     return cur.rowcount > 0
@@ -92,6 +101,9 @@ def _insert_trade(conn, t, now):
 # desde la DB al arrancar, así un reinicio no pierde la referencia ni
 # vuelve a considerar "hueco" todo lo que ya estaba capturado.
 _high_water = {"ts": None}
+
+# El primer poll trae historia previa al arranque; se marca para excluirla.
+_startup = {"pending": True}
 
 
 def _load_high_water():
@@ -104,7 +116,7 @@ def _load_high_water():
     return _high_water["ts"]
 
 
-def _insert_page(trades, now):
+def _insert_page(trades, api_received_at, cdn_age_s=None, is_startup_batch=False):
     """Toda la página en UNA transacción: antes era una por trade (100 commits
     por poll), lo que junto al firehose del order book hacía que el poll del
     líder se arrastrara a 1 cada 5s en vez de 1/s."""
@@ -112,7 +124,7 @@ def _insert_page(trades, now):
     with db.connect() as conn:
         for t in trades:
             try:
-                if _insert_trade(conn, t, now):
+                if _insert_trade(conn, t, api_received_at, cdn_age_s, is_startup_batch):
                     n_new += 1
             except Exception as e:
                 # un trade malo nunca debe abortar el resto del lote (este bug exacto
@@ -160,9 +172,21 @@ def poll_once():
     n_returned = n_new = n_gap_filled = gap_pages = 0
     oldest = newest = None
     try:
-        trades = pm.get_leader_trades(LEADER_WALLET, limit=100)
+        trades, meta = pm.get_leader_trades(LEADER_WALLET, limit=100, with_meta=True)
+        api_received_at = meta["api_received_at"]
+        cdn_age = meta["cdn_age_s"]
         n_returned = len(trades)
-        n_new = _insert_page(trades, now)
+
+        # El PRIMER poll trae hasta 100 trades que ya habían ocurrido antes de
+        # arrancar: no son detecciones nuestras y meterlos en las métricas de
+        # latencia/cobertura las falsea por completo. Se marcan y se excluyen.
+        is_startup = _startup["pending"]
+        n_new = _insert_page(trades, api_received_at, cdn_age, is_startup_batch=is_startup)
+        if is_startup:
+            _startup["pending"] = False
+            db.log_event("leader_trades", "startup_batch", {
+                "n_trades": n_new,
+                "nota": "historia previa al arranque, excluida de latencia y cobertura LIVE"})
 
         if trades:
             timestamps = [float(t["timestamp"]) for t in trades]

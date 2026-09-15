@@ -33,8 +33,8 @@ def test_duplicate_leader_trade_inserts_once(monkeypatch):
 
     t = _sample_trade()
     with db.connect() as conn:
-        assert ltc._insert_trade(conn, t, now=1000.5) is True
-        assert ltc._insert_trade(conn, t, now=1001.0) is False  # mismo trade -> ignorado
+        assert ltc._insert_trade(conn, t, api_received_at=1000.5) is True
+        assert ltc._insert_trade(conn, t, api_received_at=1001.0) is False  # mismo trade -> ignorado
 
     with db.connect() as conn:
         n = conn.execute("SELECT count(*) c FROM leader_trades").fetchone()["c"]
@@ -49,12 +49,12 @@ def test_restart_after_crash_mid_batch_does_not_duplicate(monkeypatch):
 
     t = _sample_trade()
     with db.connect() as conn:
-        ltc._insert_trade(conn, t, now=1000.5)
+        ltc._insert_trade(conn, t, api_received_at=1000.5)
         # "restart": nothing in memory persists (no seen-set to reload, unlike the
         # old jsonl/seen_leader_keys approach) -- correctness comes entirely from
         # the UNIQUE constraint, not from remembering what we've seen
-        ltc._insert_trade(conn, t, now=1000.6)
-        ltc._insert_trade(conn, t, now=1000.7)
+        ltc._insert_trade(conn, t, api_received_at=1000.6)
+        ltc._insert_trade(conn, t, api_received_at=1000.7)
 
     with db.connect() as conn:
         n = conn.execute("SELECT count(*) c FROM leader_trades").fetchone()["c"]
