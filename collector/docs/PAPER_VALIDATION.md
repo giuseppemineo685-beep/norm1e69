@@ -181,6 +181,24 @@ Nada se borró. `export_paper_validation.py`: la pestaña **Signals** y
 pestaña **Strategy Summary** (P&L/ROI/drawdown oficiales) filtra
 exclusivamente a `OFFICIAL`.
 
+## Pestañas de reporte añadidas (2026-09-16, capa de export únicamente)
+
+- **Strategy Summary**: además del P&L/ROI bruto, ahora muestra
+  `pnl_after_fees_usd`/`roi_after_fees_pct` — una ESTIMACIÓN separada
+  (`OFFICIAL_FEE_RATE_ASSUMPTION` en `export_paper_validation.py`, hoy 0%
+  porque el CLOB de Polymarket no cobra fee de trading estándar en órdenes
+  market/limit según documentación pública, no verificado en vivo). Nunca
+  toca `paper_decisions`/`paper_resolutions`. Nota explícita: las 3
+  estrategias son experimentos independientes, **nunca sumar sus filas
+  como rendimiento de una cartera combinada**.
+- **Momentum vs Favorite**: MOMENTUM_PURE vs POLYMARKET_FAVORITE_BASELINE
+  restringido a la intersección exacta de `condition_id` donde ambas tienen
+  resolución OFFICIAL (no sus universos completos por separado, que
+  difieren porque momentum exige señal y favorito no). Incluye desglose
+  BTC/ETH/SOL y detalle mercado por mercado.
+- Ningún cambio a `run_paper_validation.py` — reglas congeladas, proceso
+  vivo sin reiniciar.
+
 ## Limitaciones conocidas
 
 - Un solo checkpoint de validación forward — cuantos más mercados nuevos

@@ -17,6 +17,17 @@ import openpyxl
 
 import paper_validation_db as pdb
 
+# Estimacion de fee, NO una tarifa verificada en vivo en esta sesion. Segun
+# la documentacion publica de Polymarket (a la fecha de entrenamiento de este
+# modelo), el CLOB no cobra fee de trading estandar en ordenes market/limit
+# para usuarios normales (0%) -- el "costo" real ya esta capturado en el
+# spread/profundidad que recorremos al ejecutar (executable_price real, no
+# mid). Se deja como constante nombrada, explicita y facil de cambiar si el
+# usuario tiene una tasa oficial distinta que aplicar -- NUNCA se aplica a
+# los fills/decisiones guardados (paper_resolutions no se toca), solo a un
+# calculo derivado y separado en el reporte.
+OFFICIAL_FEE_RATE_ASSUMPTION = 0.0
+
 
 def fmt(ts):
     return None if ts is None else datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -166,6 +177,17 @@ def build(out_path):
                     f">= {fmt(float(cohort_start)) if cohort_start else '?'}). "
                     f"{n_excluded} resoluciones PRE_VPN_RECOVERY excluidas de este resumen (visibles, sin "
                     f"borrar, en la pestaña Resolutions).")
+        ws["A3"] = ("IMPORTANTE: estas 3 estrategias son experimentos INDEPENDIENTES sobre el mismo "
+                    "universo, no posiciones de una misma cartera -- cada una despliega su propio "
+                    "capital por separado. NO sumar sus filas como si fuera el rendimiento combinado "
+                    "de un portfolio; se reportan y se leen una por una.")
+        ws["A4"] = (f"pnl_usd/roi_pct = P&L BRUTO (fills reales, sin modificar). "
+                    f"pnl_after_fees_usd/roi_after_fees_pct = ESTIMACION separada aplicando "
+                    f"{OFFICIAL_FEE_RATE_ASSUMPTION*100:.2f}% de fee sobre el capital desplegado "
+                    f"(Polymarket CLOB no cobra fee de trading estandar en ordenes market/limit segun "
+                    f"documentacion publica -- no verificado en vivo esta sesion; cambiar "
+                    f"OFFICIAL_FEE_RATE_ASSUMPTION si hay una tasa oficial distinta). Los fills y "
+                    f"decisiones originales en paper_decisions/paper_resolutions NO se tocan.")
         by_strategy = defaultdict(list)
         for r in official_res_rows:
             by_strategy[r["strategy"]].append(r)
@@ -175,26 +197,86 @@ def build(out_path):
             n = len(rs)
             capital = sum(r["capital_deployed_usd"] for r in rs)
             pnl = sum(r["pnl_usd"] for r in rs)
+            fees_est = capital * OFFICIAL_FEE_RATE_ASSUMPTION
+            pnl_after_fees = pnl - fees_est
             wins = sum(1 for r in rs if r["pnl_usd"] > 0)
-            by_asset = defaultdict(lambda: {"n": 0, "pnl": 0.0})
+            losses = sum(1 for r in rs if r["pnl_usd"] < 0)
+            by_asset = defaultdict(lambda: {"n": 0, "pnl": 0.0, "capital": 0.0})
             for r in rs:
                 a = by_asset[r["asset_symbol"]]
-                a["n"] += 1; a["pnl"] += r["pnl_usd"]
+                a["n"] += 1; a["pnl"] += r["pnl_usd"]; a["capital"] += r["capital_deployed_usd"]
             dd = _drawdown([r["pnl_usd"] for r in sorted(rs, key=lambda r: r["resolved_at_utc"])])
             row = {
-                "strategy": strategy, "n_resolved": n, "capital_deployed_usd": round(capital, 2),
+                "strategy": strategy, "n_resolved": n, "n_wins": wins, "n_losses": losses,
+                "capital_deployed_usd": round(capital, 2),
                 "pnl_usd": round(pnl, 2), "roi_pct": round(pnl / capital * 100, 2) if capital else None,
+                "estimated_fees_usd": round(fees_est, 4),
+                "pnl_after_fees_usd": round(pnl_after_fees, 2),
+                "roi_after_fees_pct": round(pnl_after_fees / capital * 100, 2) if capital else None,
                 "win_rate_pct": round(wins / n * 100, 1) if n else None, "max_drawdown_usd": round(dd, 2),
             }
             for asset in ("BTC", "ETH", "SOL"):
-                a = by_asset.get(asset, {"n": 0, "pnl": 0.0})
+                a = by_asset.get(asset, {"n": 0, "pnl": 0.0, "capital": 0.0})
                 row[f"{asset}_n"] = a["n"]; row[f"{asset}_pnl"] = round(a["pnl"], 2)
+                row[f"{asset}_roi_pct"] = round(a["pnl"] / a["capital"] * 100, 2) if a["capital"] else None
             summary_rows.append(row)
-        headers_s = ["strategy", "n_resolved", "capital_deployed_usd", "pnl_usd", "roi_pct",
-                     "win_rate_pct", "max_drawdown_usd", "BTC_n", "BTC_pnl", "ETH_n", "ETH_pnl",
-                     "SOL_n", "SOL_pnl"]
-        _write_table(ws, headers_s, summary_rows, start_row=3)
-        ws["A1"] = "P&L/ROI/drawdown agregado por estrategia -- se llena a medida que cierran mercados."
+        headers_s = ["strategy", "n_resolved", "n_wins", "n_losses", "capital_deployed_usd", "pnl_usd",
+                     "roi_pct", "estimated_fees_usd", "pnl_after_fees_usd", "roi_after_fees_pct",
+                     "win_rate_pct", "max_drawdown_usd", "BTC_n", "BTC_pnl", "BTC_roi_pct",
+                     "ETH_n", "ETH_pnl", "ETH_roi_pct", "SOL_n", "SOL_pnl", "SOL_roi_pct"]
+        _write_table(ws, headers_s, summary_rows, start_row=6)
+        ws["A1"] = "P&L/ROI/drawdown por estrategia (independientes) -- se llena a medida que cierran mercados."
+        ws.column_dimensions["A"].width = 28
+        ws.freeze_panes = "A7"
+
+        # ---------- Momentum vs Favorite (exactamente los mismos condition_id) ----------
+        ws = wb.create_sheet("Momentum vs Favorite")
+        mom_by_cid = {r["condition_id"]: r for r in official_res_rows if r["strategy"] == "MOMENTUM_PURE"}
+        fav_by_cid = {r["condition_id"]: r for r in official_res_rows if r["strategy"] == "POLYMARKET_FAVORITE_BASELINE"}
+        common_cids = set(mom_by_cid) & set(fav_by_cid)
+        ws["A1"] = (f"MOMENTUM_PURE vs POLYMARKET_FAVORITE_BASELINE, restringido a los "
+                    f"{len(common_cids)} condition_id donde AMBAS tienen resolucion OFFICIAL -- "
+                    f"comparacion exacta, no universos separados. (MOMENTUM_PURE tiene "
+                    f"{len(mom_by_cid)} en total, FAVORITE {len(fav_by_cid)}; se usa la interseccion.)")
+
+        def _agg_common(by_cid, cids, label):
+            rs = [by_cid[c] for c in cids]
+            n = len(rs)
+            capital = sum(r["capital_deployed_usd"] for r in rs)
+            pnl = sum(r["pnl_usd"] for r in rs)
+            wins = sum(1 for r in rs if r["pnl_usd"] > 0)
+            by_asset = defaultdict(lambda: {"n": 0, "pnl": 0.0, "capital": 0.0})
+            for r in rs:
+                a = by_asset[r["asset_symbol"]]
+                a["n"] += 1; a["pnl"] += r["pnl_usd"]; a["capital"] += r["capital_deployed_usd"]
+            row = {"strategy": label, "n": n, "capital_usd": round(capital, 2), "pnl_usd": round(pnl, 2),
+                   "roi_pct": round(pnl / capital * 100, 2) if capital else None,
+                   "win_rate_pct": round(wins / n * 100, 1) if n else None}
+            for asset in ("BTC", "ETH", "SOL"):
+                a = by_asset.get(asset, {"n": 0, "pnl": 0.0, "capital": 0.0})
+                row[f"{asset}_n"] = a["n"]; row[f"{asset}_pnl"] = round(a["pnl"], 2)
+                row[f"{asset}_roi_pct"] = round(a["pnl"] / a["capital"] * 100, 2) if a["capital"] else None
+            return row
+
+        cmp_rows = [_agg_common(mom_by_cid, common_cids, "MOMENTUM_PURE_common"),
+                    _agg_common(fav_by_cid, common_cids, "POLYMARKET_FAVORITE_common")]
+        headers_cmp = ["strategy", "n", "capital_usd", "pnl_usd", "roi_pct", "win_rate_pct",
+                       "BTC_n", "BTC_pnl", "BTC_roi_pct", "ETH_n", "ETH_pnl", "ETH_roi_pct",
+                       "SOL_n", "SOL_pnl", "SOL_roi_pct"]
+        next_row_cmp = _write_table(ws, headers_cmp, cmp_rows, start_row=3)
+
+        detail_rows = []
+        for c in sorted(common_cids, key=lambda c: mom_by_cid[c]["resolved_at_utc"]):
+            m, f = mom_by_cid[c], fav_by_cid[c]
+            detail_rows.append({
+                "condition_id": c, "asset_symbol": m["asset_symbol"], "winner": m["winner"],
+                "momentum_pnl_usd": round(m["pnl_usd"], 4), "favorite_pnl_usd": round(f["pnl_usd"], 4),
+                "momentum_capital_usd": m["capital_deployed_usd"], "favorite_capital_usd": f["capital_deployed_usd"],
+            })
+        ws.cell(row=next_row_cmp + 1, column=1, value="Detalle por mercado (interseccion):")
+        _write_table(ws, ["condition_id", "asset_symbol", "winner", "momentum_pnl_usd", "favorite_pnl_usd",
+                          "momentum_capital_usd", "favorite_capital_usd"],
+                     detail_rows, start_row=next_row_cmp + 3)
         ws.column_dimensions["A"].width = 28
         ws.freeze_panes = "A4"
 
@@ -229,6 +311,17 @@ def build(out_path):
             "el ejecutor real ni ningun cliente de ordenes/wallet, nunca lee credenciales, y abre "
             "collector/data.db exclusivamente en modo read-only (a nivel de driver sqlite, no solo por "
             "convencion). Escribe unicamente en collector/paper_validation.db.",
+            "Las 3 estrategias son experimentos INDEPENDIENTES, no posiciones de una misma cartera -- "
+            "sus filas en Strategy Summary NUNCA deben sumarse como si fuera un portfolio combinado.",
+            f"Fees: pnl_usd/roi_pct son BRUTOS (fills reales, sin tocar). pnl_after_fees_usd/"
+            f"roi_after_fees_pct son una ESTIMACION separada, calculada aplicando "
+            f"OFFICIAL_FEE_RATE_ASSUMPTION={OFFICIAL_FEE_RATE_ASSUMPTION} sobre el capital desplegado -- "
+            f"nunca modifica paper_decisions/paper_resolutions. El valor actual (0%) refleja que el CLOB "
+            f"de Polymarket no cobra fee de trading estandar en ordenes market/limit segun documentacion "
+            f"publica, no verificado en vivo en esta sesion.",
+            "Momentum vs Favorite: comparacion restringida a la INTERSECCION exacta de condition_id "
+            "donde ambas estrategias tienen resolucion OFFICIAL -- nunca se comparan sus universos "
+            "completos por separado (que difieren, porque MOMENTUM_PURE exige señal y FAVORITE no).",
         ]
         ws.append(["nota_metodologica"])
         for m in methodology:
