@@ -4011,7 +4011,7 @@
     7.833704710006714,
     6.833704710006714
   ],
-  "paper_cash": 8119.77395186088,
+  "paper_cash": 8141.332381324152,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x75a61586644d37537106eb0f4a28cc7e103a68ca5b956c8d0ce3d91c6a5e9cb4": {
@@ -4021,22 +4021,6 @@
       },
       "cost": 31.0,
       "title": "Ethereum Up or Down - September 15, 6:30AM-6:35AM ET"
-    },
-    "0xd25f217a5bd8ff568660e0d37a38a406b73ffa3b5cdf1aca4faed3764f430982": {
-      "shares": {
-        "Down": 702.2222222222222,
-        "Up": 9.793722293722292
-      },
-      "cost": 17.0,
-      "title": "Bitcoin Up or Down - September 15, 6:30AM-6:35AM ET"
-    },
-    "0x13c7c33a7c2d5d326ccf9f60b6720a2b08ad96d5c899b26e08cf7488b5b9172a": {
-      "shares": {
-        "Down": 15.647990945104699,
-        "Up": 11.764707169550311
-      },
-      "cost": 15.0,
-      "title": "Solana Up or Down - September 15, 6:30AM-6:35AM ET"
     },
     "0xf8992976f5d4b4d324ea32b9487e4f99f3a595097a7c82ecb8ecae68b520c5bf": {
       "shares": {
@@ -4094,33 +4078,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 3183.8620734304745,
+  "paper_b_cash": 3224.0505644151767,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x75a61586644d37537106eb0f4a28cc7e103a68ca5b956c8d0ce3d91c6a5e9cb4": {
-      "shares": {
-        "Up": 23.55263157894737,
-        "Down": 14.947987336047037
-      },
-      "cost": 19.0,
-      "title": "Ethereum Up or Down - September 15, 6:30AM-6:35AM ET"
-    },
-    "0xd25f217a5bd8ff568660e0d37a38a406b73ffa3b5cdf1aca4faed3764f430982": {
-      "shares": {
-        "Down": 302.22222222222223,
-        "Up": 8.792721292721291
-      },
-      "cost": 12.0,
-      "title": "Bitcoin Up or Down - September 15, 6:30AM-6:35AM ET"
-    },
-    "0x13c7c33a7c2d5d326ccf9f60b6720a2b08ad96d5c899b26e08cf7488b5b9172a": {
-      "shares": {
-        "Down": 10.384833050367856,
-        "Up": 7.843138113033541
-      },
-      "cost": 10.0,
-      "title": "Solana Up or Down - September 15, 6:30AM-6:35AM ET"
-    },
     "0xf8992976f5d4b4d324ea32b9487e4f99f3a595097a7c82ecb8ecae68b520c5bf": {
       "shares": {
         "Up": 4.696356275303643,
