@@ -4011,25 +4011,9 @@
     61.223191261291504,
     50.223191261291504
   ],
-  "paper_cash": 7150.44496555064,
+  "paper_cash": 7167.143869522065,
   "paper_start_cash": 2500.0,
   "paper_positions": {
-    "0xd97e62aa005cd83fde992c4a424800f84151576cc84cfed9f2ca66dd71a97994": {
-      "shares": {
-        "Down": 10.638297910819377,
-        "Up": 160.0
-      },
-      "cost": 26.0,
-      "title": "Bitcoin Up or Down - September 14, 9:55PM-10:00PM ET"
-    },
-    "0xbcac6486a3f0b186da969430a9b25fad350757728dad915d716b829efae5923e": {
-      "shares": {
-        "Up": 167.5864322136204,
-        "Down": 6.060606060606061
-      },
-      "cost": 12.0,
-      "title": "Ethereum Up or Down - September 14, 9:55PM-10:00PM ET"
-    },
     "0xc5b5e154723c4b40800c6746de8f80cad931e831d56264a66d6739dcccdb5d75": {
       "shares": {
         "Up": 36.664261664261666,
@@ -4072,39 +4056,15 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2888.5351809624267,
+  "paper_b_cash": 2902.137158200665,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0xc5b5e154723c4b40800c6746de8f80cad931e831d56264a66d6739dcccdb5d75": {
-      "shares": {
-        "Up": 36.664261664261666,
-        "Down": 7.2727272727272725
-      },
-      "cost": 10.0,
-      "title": "Solana Up or Down - September 14, 9:55PM-10:00PM ET"
-    },
     "0x2ff33e526fff8ebe81521bd4c6f85f586c0314a93fbd048a3bf448d7dc3bde18": {
       "shares": {
         "Down": 1.5873016130007562
       },
       "cost": 1.0,
       "title": "Bitcoin Up or Down - September 14, 9:45PM-10:00PM ET"
-    },
-    "0xd97e62aa005cd83fde992c4a424800f84151576cc84cfed9f2ca66dd71a97994": {
-      "shares": {
-        "Up": 50.0,
-        "Down": 5.3191489554096885
-      },
-      "cost": 10.0,
-      "title": "Bitcoin Up or Down - September 14, 9:55PM-10:00PM ET"
-    },
-    "0xbcac6486a3f0b186da969430a9b25fad350757728dad915d716b829efae5923e": {
-      "shares": {
-        "Down": 1.0101010101010102,
-        "Up": 27.931072035603403
-      },
-      "cost": 2.0,
-      "title": "Ethereum Up or Down - September 14, 9:55PM-10:00PM ET"
     },
     "0xbf5c980a6ee8a9f81757eac7701111760867c83fcd79be4f2d33d1e2d05dafa9": {
       "shares": {
