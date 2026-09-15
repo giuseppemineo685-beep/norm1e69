@@ -4011,7 +4011,7 @@
     18.042981386184692,
     14.042981386184692
   ],
-  "paper_cash": 7504.921684087614,
+  "paper_cash": 7535.237048108924,
   "paper_start_cash": 2500.0,
   "paper_positions": {
     "0x08c1fd0fad6c64ef7c27b14c1c5475353572f5cbbdfb23825d3200dab2524bfa": {
@@ -4020,22 +4020,6 @@
       },
       "cost": 1.0,
       "title": "Bitcoin Up or Down - September 15, 3:30AM-3:45AM ET"
-    },
-    "0x571329fbaf6f6518ce450f464b142d8b1ab5563fdc9488a68679b318b177b96d": {
-      "shares": {
-        "Up": 42.413858747382456,
-        "Down": 13.42857142857143
-      },
-      "cost": 18.0,
-      "title": "Bitcoin Up or Down - September 15, 3:40AM-3:45AM ET"
-    },
-    "0x0cf5266edcbc96be24da8cbb7bc2216db9cb88a6982dff7b79772277a8d05c54": {
-      "shares": {
-        "Up": 16.88679259273764,
-        "Down": 61.11111111111112
-      },
-      "cost": 24.0,
-      "title": "Ethereum Up or Down - September 15, 3:40AM-3:45AM ET"
     },
     "0x08146eeee6cda784226efa8c0ce6afc51d9cdefd612140b0a2ab01adf648227e": {
       "shares": {
@@ -4116,32 +4100,9 @@
     }
   },
   "n_paper_skipped_cash": 0,
-  "paper_b_cash": 2816.9856002517913,
+  "paper_b_cash": 2843.372392844529,
   "paper_b_start_cash": 2500.0,
   "paper_b_positions": {
-    "0x08c1fd0fad6c64ef7c27b14c1c5475353572f5cbbdfb23825d3200dab2524bfa": {
-      "shares": {
-        "Up": 1.923076923076923
-      },
-      "cost": 1.0,
-      "title": "Bitcoin Up or Down - September 15, 3:30AM-3:45AM ET"
-    },
-    "0x571329fbaf6f6518ce450f464b142d8b1ab5563fdc9488a68679b318b177b96d": {
-      "shares": {
-        "Up": 37.35722444317533,
-        "Down": 12.000000000000002
-      },
-      "cost": 16.0,
-      "title": "Bitcoin Up or Down - September 15, 3:40AM-3:45AM ET"
-    },
-    "0x0cf5266edcbc96be24da8cbb7bc2216db9cb88a6982dff7b79772277a8d05c54": {
-      "shares": {
-        "Up": 14.386792592737638,
-        "Down": 61.11111111111112
-      },
-      "cost": 22.0,
-      "title": "Ethereum Up or Down - September 15, 3:40AM-3:45AM ET"
-    },
     "0x08146eeee6cda784226efa8c0ce6afc51d9cdefd612140b0a2ab01adf648227e": {
       "shares": {
         "Up": 23.2764073371284,
