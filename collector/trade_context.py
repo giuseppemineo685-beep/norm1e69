@@ -17,24 +17,47 @@ OFFSETS = (-10, -5, -3, -1, 0, 1, 3, 5, 10)
 SNAPSHOT_TOLERANCE_S = 2.5  # if no real snapshot is this close to the target instant,
                              # context_available=False for that offset -- never invented
 
+# Hueco de order book confirmado (auditoria Codex + verificacion propia, 2026-09-15):
+# 2026-09-15 14:58:30 -> 16:35:18 UTC, 96.8 min sin captura real de order book (caida de
+# VPN: ambos hosts de Polymarket inalcanzables, Binance siguio funcionando normal). Los
+# trades del lider en esa ventana SI se recuperaron (poll de trades con paginacion hacia
+# atras), pero su contexto de mercado es irrecuperable -- no existe order book historico.
+# Se usan epochs fijos (no se recalculan en cada corrida) porque es un evento puntual ya
+# cerrado, documentado, y verificado independientemente dos veces.
+ORDERBOOK_GAP_START_TS = 1789484310.0  # 2026-09-15 14:58:30 UTC
+ORDERBOOK_GAP_END_TS = 1789490118.0    # 2026-09-15 16:35:18 UTC
+
+
+def _in_known_gap(trade_ts):
+    return ORDERBOOK_GAP_START_TS <= trade_ts <= ORDERBOOK_GAP_END_TS
+
 
 def _nearest_snapshot(conn, condition_id, token_id, target_ts):
-    """El ÚLTIMO snapshot con timestamp <= target_ts. Nunca uno posterior.
+    """El ÚLTIMO snapshot con timestamp <= target_ts, exigiendo AMBAS cosas a la vez:
 
-    Antes se elegía el más cercano en valor absoluto, y eso podía devolver un
-    snapshot POSTERIOR al instante pedido: para los offsets <= 0 eso es
-    look-ahead bias directo (estarías alimentando un backtest con el libro de
-    después de la decisión), y para los offsets > 0 tampoco es el estado "a
-    ese momento". La regla ahora es uniforme: el estado del libro tal como se
-    veía en o antes de ese instante."""
+      1. event_timestamp <= target_ts (el timestamp que declara el propio evento/mensaje)
+      2. received_timestamp <= target_ts (el instante en que el collector REALMENTE lo recibió)
+
+    Antes solo se exigía (1). Auditoria (propia + Codex, 2026-09-15) encontró que ~22% de
+    los trades con contexto elegían al menos un snapshot cuyo evento declaraba un timestamp
+    anterior al trade pero que en los HECHOS llegó al collector despues de que el trade ya
+    había ocurrido (típico de WS: el mensaje trae su propio timestamp, que puede quedar algo
+    atrás de cuándo realmente se procesó). Ese snapshot nunca pudo haber informado una
+    decisión tomada en tiempo real -- es look-ahead de disponibilidad real, aunque el
+    timestamp declarado por sí solo pareciera correcto. Exigir también (2) lo elimina.
+
+    Con ambas condiciones activas, se ordena por received_at_utc_ms DESC (no por el
+    timestamp declarado): entre los candidatos ya validos, el más recientemente RECIBIDO es
+    el más informativo."""
     row = conn.execute(
         """SELECT *, COALESCE(source_timestamp_utc, received_at_utc_ms/1000.0) AS ts
            FROM orderbook_snapshots
            WHERE condition_id=? AND token_id=?
              AND COALESCE(source_timestamp_utc, received_at_utc_ms/1000.0) <= ?
-           ORDER BY ts DESC
+             AND received_at_utc_ms/1000.0 <= ?
+           ORDER BY received_at_utc_ms DESC
            LIMIT 1""",
-        (condition_id, token_id, target_ts),
+        (condition_id, token_id, target_ts, target_ts),
     ).fetchone()
     if row is None:
         return None, None
@@ -102,7 +125,17 @@ def _executable_price(conn, snapshot_id, target_shares):
 
 def _nearest_underlying(conn, asset_symbol, target_ts):
     """Misma regla que el order book: la última lectura EN O ANTES del
-    instante pedido, nunca una posterior."""
+    instante pedido, nunca una posterior.
+
+    NOTA: a diferencia del order book, acá NO hay una distinción real entre
+    'event timestamp' y 'received timestamp' que corregir -- confirmado en la
+    auditoría: underlying_price_collector.py escribe source_timestamp_utc y
+    received_at_utc con el MISMO valor (el instante local en que se lanzó el
+    request, no cuando llegó la respuesta). Filtrar por received_at_utc<=target_ts
+    (como ya hace esta query) es correcto pero no aporta nada adicional hasta
+    que el collector capture el timestamp real de recepción de la respuesta
+    HTTP -- eso es un cambio de instrumentación en vivo, fuera de alcance de
+    esta capa de derivación (ver corrección propuesta #1 del audit)."""
     row = conn.execute(
         """SELECT * FROM underlying_prices
            WHERE asset_symbol=? AND received_at_utc <= ?
@@ -141,6 +174,8 @@ def _build_one(conn, trade):
         return
     token_own = market["token_up_id"] if outcome == "Up" else market["token_down_id"]
     token_other = market["token_down_id"] if outcome == "Up" else market["token_up_id"]
+    trade_in_known_gap = _in_known_gap(trade_ts)
+    is_live_non_startup = trade["collection_method"] == "LIVE" and not trade["is_startup_batch"]
 
     inv = conn.execute(
         "SELECT * FROM leader_inventory_timeline WHERE after_trade_id=?", (trade_id,)
@@ -187,18 +222,35 @@ def _build_one(conn, trade):
                                                       _depth(conn, other_snap["id"] if other_snap else None, "ask")) \
             if outcome == "Up" else (best_bid_own, best_ask_own, _depth(conn, own_id, "bid"), _depth(conn, own_id, "ask"))
 
+        snapshot_up_id = own_id if outcome == "Up" else other_id
+        snapshot_down_id = other_id if outcome == "Up" else own_id
+        underlying_id = underlying["id"] if underlying else None
+
+        # Usable para aprendizaje/backtest de una estrategia AUTONOMA (no copy-trading):
+        # exige TODO lo anterior (offset<=0, ambos libros bajo la regla conservadora,
+        # subyacente disponible) MAS que el trade sea LIVE genuino (no startup, no
+        # BACKFILL importado -- esos nunca tienen order book real) Y que no caiga dentro
+        # del hueco de 96.8min sin order book, donde el contexto es irrecuperable aunque
+        # el trade en si se haya recuperado.
+        usable_for_strategy_learning = (
+            offset <= 0 and context_available and underlying is not None
+            and is_live_non_startup and not trade_in_known_gap
+        )
+
         conn.execute(
             """INSERT OR IGNORE INTO trade_context
                (leader_trade_id, offset_seconds, usable_for_backtest, context_available,
                 underlying_available, context_quality, snapshot_age_s,
+                snapshot_up_id, snapshot_down_id, underlying_price_id, usable_for_strategy_learning,
                 best_bid_up, best_ask_up, depth_bid_up, depth_ask_up,
                 best_bid_down, best_ask_down, depth_bid_down, depth_ask_down,
                 spread_up, spread_down, underlying_price, underlying_distance_from_open_pct,
                 executable_price_for_leader_size, opposite_leg_price, combined_cost_to_pair,
                 leader_up_shares_snapshot, leader_down_shares_snapshot)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (trade_id, offset, 1 if offset <= 0 else 0, 1 if context_available else 0,
              1 if underlying is not None else 0, context_quality, own_age,
+             snapshot_up_id, snapshot_down_id, underlying_id, 1 if usable_for_strategy_learning else 0,
              up_bid, up_ask, up_dbid, up_dask, down_bid, down_ask, down_dbid, down_dask,
              (up_ask - up_bid) if (up_ask is not None and up_bid is not None) else None,
              (down_ask - down_bid) if (down_ask is not None and down_bid is not None) else None,

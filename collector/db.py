@@ -283,6 +283,17 @@ CREATE TABLE IF NOT EXISTS trade_context (
     spread_up REAL, spread_down REAL,
     underlying_price REAL,
     underlying_distance_from_open_pct REAL,
+    snapshot_up_id INTEGER REFERENCES orderbook_snapshots(id),   -- trazabilidad exacta: cual
+    snapshot_down_id INTEGER REFERENCES orderbook_snapshots(id), -- fila de orderbook_snapshots
+                                           -- se uso para cada lado (no solo los valores derivados)
+    underlying_price_id INTEGER REFERENCES underlying_prices(id), -- idem para el precio del subyacente
+    usable_for_strategy_learning INTEGER NOT NULL DEFAULT 0, -- 0/1: usable_for_backtest=1 AND
+                                           -- context_available=1 (bajo la regla conservadora:
+                                           -- event_ts<=trade_ts Y received_ts<=trade_ts) AND
+                                           -- underlying_available=1 AND collection_method='LIVE'
+                                           -- AND NOT is_startup_batch AND el trade no cayo dentro
+                                           -- del hueco de order book de 96.8min (2026-09-15
+                                           -- 14:58:30-16:35:18 UTC, sin contexto recuperable)
     executable_price_for_leader_size REAL,  -- VWAP to fill the leader's own trade size, from depth
     opposite_leg_price REAL,                -- best ask of the other side at this instant
     combined_cost_to_pair REAL,              -- executable_price_for_leader_size + opposite_leg_price
@@ -374,6 +385,10 @@ MIGRATIONS = {
     "trade_context": {
         "underlying_available": "INTEGER DEFAULT 0",
         "context_quality": "TEXT",
+        "snapshot_up_id": "INTEGER",
+        "snapshot_down_id": "INTEGER",
+        "underlying_price_id": "INTEGER",
+        "usable_for_strategy_learning": "INTEGER NOT NULL DEFAULT 0",
     },
     "markets": {
         "window_minutes": "INTEGER",
