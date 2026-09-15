@@ -190,7 +190,7 @@ def _build_one(conn, trade):
         conn.execute(
             """INSERT OR IGNORE INTO trade_context
                (leader_trade_id, offset_seconds, usable_for_backtest, context_available,
-                underlying_available, snapshot_age_s,
+                underlying_available, context_quality, snapshot_age_s,
                 best_bid_up, best_ask_up, depth_bid_up, depth_ask_up,
                 best_bid_down, best_ask_down, depth_bid_down, depth_ask_down,
                 spread_up, spread_down, underlying_price, underlying_distance_from_open_pct,
