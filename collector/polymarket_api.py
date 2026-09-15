@@ -5,6 +5,7 @@ in this module -- everything here is either a public GET or a read-only
 WebSocket subscription.
 """
 import json
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,6 +16,13 @@ from config import GAMMA_BASE, CLOB_BASE, DATA_API_BASE, ORDERBOOK_DEPTH_LEVELS
 
 _session = requests.Session()
 _session.headers.update({"User-Agent": "norm1e69-research-collector/0.1"})
+
+
+# Duraciones de ventana que opera el líder, medido sobre sus trades reales:
+# 5min = 97% de los trades y 88% del volumen; 15min = el resto (BTC only,
+# pero real). Los esports quedan fuera a propósito: 17 trades / $113 en la
+# muestra, y no son mercados Up/Down de precio.
+WINDOW_SPECS = (("5m", 300), ("15m", 900))
 
 
 @dataclass
@@ -30,6 +38,7 @@ class Market:
     closed: bool
     outcome: str | None          # 'Up' | 'Down' | None
     resolution_source: str | None
+    window_minutes: int | None = None
 
 
 def _get(url, timeout=10, **params):
@@ -92,18 +101,48 @@ def get_market_by_slug(slug: str, asset_symbol: str) -> Market | None:
     return _parse_market(m, asset_symbol)
 
 
-def find_active_window(asset: str) -> Market | None:
-    """Find the currently-live 5-minute Up/Down window for one asset by
-    probing nearby slugs (slug embeds an epoch on a 300s grid; we don't
-    know a priori if it marks window start or end, so we try neighbors)."""
+def _window_start_from_slug(slug: str) -> float | None:
+    """El epoch del slug es el INICIO de la ventana (verificado: el slug
+    `btc-updown-15m-1789466400` corresponde a 06:00:00 ET y su título dice
+    "6:00AM-6:15AM ET"). El fin es inicio + duración. Se deriva de acá y no
+    del `end_date_iso` del CLOB, que para estos mercados devuelve medianoche
+    del día en vez del cierre real de la ventana."""
+    try:
+        return float(slug.rsplit("-", 1)[1])
+    except (IndexError, ValueError):
+        return None
+
+
+def find_active_windows(asset: str) -> list[Market]:
+    """Ventanas Up/Down vivas ahora mismo para un asset, en todas las
+    duraciones que opera el líder (5m y 15m). El slug embebe un epoch en una
+    grilla de la duración; no sabemos a priori si marca inicio o fin, así que
+    se prueban vecinos."""
     now = time.time()
-    base = int(now // 300) * 300
-    for candidate_ts in (base, base + 300, base - 300, base + 600):
-        slug = f"{asset}-updown-5m-{candidate_ts}"
-        m = get_market_by_slug(slug, asset)
-        if m and m.start_ts and m.end_ts and m.start_ts <= now < m.end_ts and not m.closed:
-            return m
-    return None
+    found = []
+    for label, grid in WINDOW_SPECS:
+        base = int(now // grid) * grid
+        for candidate_ts in (base, base + grid, base - grid, base + 2 * grid):
+            slug = f"{asset}-updown-{label}-{candidate_ts}"
+            m = get_market_by_slug(slug, asset)
+            if not m or m.closed:
+                continue
+            start_ts = _window_start_from_slug(slug)
+            if start_ts is None:
+                continue
+            end_ts = start_ts + grid
+            if start_ts <= now < end_ts:
+                m.start_ts, m.end_ts = start_ts, end_ts
+                m.window_minutes = grid // 60
+                found.append(m)
+                break
+    return found
+
+
+def find_active_window(asset: str) -> Market | None:
+    """Compat: solo la ventana de 5 minutos (la dominante: 97% de los trades
+    del líder). Preferir find_active_windows() para cobertura completa."""
+    return next((m for m in find_active_windows(asset) if m.window_minutes == 5), None)
 
 
 def get_book(token_id: str) -> dict:
@@ -128,6 +167,52 @@ def get_leader_trades(wallet: str, limit: int = 100, offset: int = 0) -> list:
 
 def get_market_trades(condition_id: str, limit: int = 100) -> list:
     return _get(f"{DATA_API_BASE}/trades", market=condition_id, limit=limit)
+
+
+def get_market_by_condition_id(condition_id: str) -> Market | None:
+    """Resuelve metadata de un mercado por condition_id vía el CLOB. Se usa
+    para los mercados que el líder opera pero que no estábamos trackeando (los
+    que ya habían cerrado antes de arrancar, o duraciones que no seguimos):
+    sin esto, `seconds_since_market_open`/`seconds_to_market_close` quedaban en
+    NULL para la mayoría de sus trades.
+
+    El inicio/fin se derivan del epoch del slug (ver _window_start_from_slug),
+    no de `end_date_iso`, que acá viene con medianoche del día."""
+    try:
+        d = _get(f"{CLOB_BASE}/markets/{condition_id}")
+    except requests.RequestException:
+        return None
+    slug = d.get("market_slug") or ""
+    tokens = d.get("tokens", [])
+    up = next((t["token_id"] for t in tokens if (t.get("outcome") or "").lower() == "up"), None)
+    down = next((t["token_id"] for t in tokens if (t.get("outcome") or "").lower() == "down"), None)
+
+    start_ts = end_ts = None
+    window_minutes = None
+    asset_symbol = None
+    m = re.match(r"(\w+)-updown-(\d+)m-(\d+)$", slug)
+    if m:
+        asset_symbol = m.group(1).upper()
+        window_minutes = int(m.group(2))
+        start_ts = float(m.group(3))
+        end_ts = start_ts + window_minutes * 60
+
+    winner = next(((t.get("outcome") or "").capitalize() for t in tokens if t.get("winner")), None)
+
+    return Market(
+        condition_id=condition_id,
+        market_slug=slug or condition_id,
+        market_title=d.get("question") or slug,
+        asset_symbol=asset_symbol,
+        token_up=up,
+        token_down=down,
+        start_ts=start_ts,
+        end_ts=end_ts,
+        closed=bool(d.get("closed")),
+        outcome=winner,
+        resolution_source=d.get("resolutionSource") or d.get("description"),
+        window_minutes=window_minutes,
+    )
 
 
 def get_resolution(condition_id: str) -> tuple[str | None, str | None]:

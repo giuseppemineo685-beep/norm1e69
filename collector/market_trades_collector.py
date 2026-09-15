@@ -49,7 +49,7 @@ def run():
     while True:
         try:
             markets = active_markets()
-            for asset, m in markets.items():
+            for m in markets.values():
                 poll_market(m.condition_id)
         except Exception as e:
             db.log_event("market_trades", "error", {"error": str(e)})

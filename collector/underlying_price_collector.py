@@ -10,7 +10,7 @@ import time
 import db
 import polymarket_api as pm
 from config import ASSETS, UNDERLYING_PRICE_POLL_INTERVAL_SEC
-from markets_collector import active_markets
+from markets_collector import primary_markets_by_asset
 
 
 _open_ref_cache = {}  # condition_id -> precio de referencia al abrir la ventana
@@ -87,7 +87,7 @@ def run():
     while True:
         next_at += UNDERLYING_PRICE_POLL_INTERVAL_SEC
         try:
-            markets = active_markets()
+            markets = primary_markets_by_asset()
             poll_once(markets)
         except Exception as e:
             db.log_event("underlying", "error", {"error": str(e)})

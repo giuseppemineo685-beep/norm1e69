@@ -5,6 +5,7 @@ del WS si se cae o si un mensaje se pierde). Ambas fuentes escriben a la
 misma tabla `orderbook_snapshots` con `source` distinguiendo 'WS'/'REST'.
 """
 import asyncio
+import concurrent.futures
 import json
 import time
 
@@ -59,30 +60,52 @@ def _insert_snapshot(conn, source_ts, received_ms, condition_id, token_id, outco
 
 
 def rest_snapshot_once(markets: dict):
+    """Los libros se piden EN PARALELO. En serie eran 12 requests encadenados
+    (3 assets x 2 duraciones x 2 lados) a ~250ms = ~3s por vuelta, o sea 1
+    snapshot cada ~4.4s por token en vez de 1/s -- medido. Con esa densidad,
+    trade_context no encontraba order book dentro de la tolerancia de 2.5s
+    alrededor de los trades del líder, que es justo el dato que da valor al
+    dataset."""
     now = time.time()
+    targets = [(m, token_id, outcome)
+               for m in markets.values()
+               for token_id, outcome in ((m.token_up, "Up"), (m.token_down, "Down"))
+               if token_id]
+    if not targets:
+        return
+
+    def fetch(target):
+        m, token_id, outcome = target
+        try:
+            return target, pm.get_book(token_id)
+        except Exception as e:
+            db.log_event("orderbook", "error", {"token_id": token_id, "error": str(e)})
+            return target, None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(16, len(targets))) as ex:
+        results = list(ex.map(fetch, targets))
+
     with db.connect() as conn:
-        for asset, m in markets.items():
-            for token_id, outcome in ((m.token_up, "Up"), (m.token_down, "Down")):
-                try:
-                    book = pm.get_book(token_id)
-                except Exception as e:
-                    db.log_event("orderbook", "error", {"token_id": token_id, "error": str(e)})
-                    continue
-                since_open = (now - m.start_ts) if m.start_ts else None
-                to_close = (m.end_ts - now) if m.end_ts else None
-                _insert_snapshot(conn, now, now * 1000, m.condition_id, token_id, outcome,
-                                  since_open, to_close, book, source="REST")
+        for (m, token_id, outcome), book in results:
+            if book is None:
+                continue
+            since_open = (now - m.start_ts) if m.start_ts else None
+            to_close = (m.end_ts - now) if m.end_ts else None
+            _insert_snapshot(conn, now, now * 1000, m.condition_id, token_id, outcome,
+                              since_open, to_close, book, source="REST")
 
 
 def run_rest():
     db.log_event("orderbook_rest", "start")
+    next_at = time.time()
     while True:
+        next_at += ORDERBOOK_SNAPSHOT_INTERVAL_SEC
         try:
             markets = active_markets()
             rest_snapshot_once(markets)
         except Exception as e:
             db.log_event("orderbook_rest", "error", {"error": str(e)})
-        time.sleep(ORDERBOOK_SNAPSHOT_INTERVAL_SEC)
+        time.sleep(max(0.0, next_at - time.time()))
 
 
 # ----------------------------------------------------------------- WS -----
@@ -98,7 +121,7 @@ class TokenRegistry:
     def refresh(self):
         markets = active_markets()
         new_map = {}
-        for asset, m in markets.items():
+        for m in markets.values():
             new_map[m.token_up] = (m.condition_id, "Up", m.start_ts, m.end_ts)
             new_map[m.token_down] = (m.condition_id, "Down", m.start_ts, m.end_ts)
         added = set(new_map) - set(self.map)

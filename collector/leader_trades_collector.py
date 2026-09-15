@@ -9,23 +9,40 @@ import json
 import time
 
 import db
+import markets_collector
 import polymarket_api as pm
-from config import LEADER_WALLET, LEADER_POLL_INTERVAL_SEC, MAX_GAP_FILL_PAGES
+from config import (LEADER_WALLET, LEADER_POLL_INTERVAL_SEC, MAX_GAP_FILL_PAGES,
+                    MAX_GAP_SECONDS_TO_AUTOFILL)
 
 _market_cache = {}  # condition_id -> (market_slug, asset_symbol, open_ts, close_ts), refreshed periodically
 
 
-def _market_info(conn, condition_id, cache_ttl_s=30):
+def _market_info(conn, condition_id, cache_ttl_s=300):
+    """Metadata del mercado de un trade. Si no la tenemos guardada, se resuelve
+    UNA vez contra la API por condition_id y se guarda -- el líder opera muchos
+    mercados que no estamos trackeando en vivo (otras duraciones, ventanas ya
+    cerradas), y sin esto sus trades quedaban sin seconds_since_market_open ni
+    seconds_to_market_close, que son campos pedidos explícitamente."""
     now = time.time()
     cached = _market_cache.get(condition_id)
     if cached and now - cached[-1] < cache_ttl_s:
         return cached[:-1]
+
     row = conn.execute(
         "SELECT market_slug, asset_symbol, open_time_utc, close_time_utc FROM markets WHERE condition_id=?",
         (condition_id,),
     ).fetchone()
-    info = (row["market_slug"], row["asset_symbol"], row["open_time_utc"], row["close_time_utc"]) if row \
-        else (None, None, None, None)
+
+    if row is None:
+        m = pm.get_market_by_condition_id(condition_id)
+        if m:
+            markets_collector.upsert_market(m, conn)
+            info = (m.market_slug, m.asset_symbol, m.start_ts, m.end_ts)
+        else:
+            info = (None, None, None, None)
+    else:
+        info = (row["market_slug"], row["asset_symbol"], row["open_time_utc"], row["close_time_utc"])
+
     _market_cache[condition_id] = info + (now,)
     return info
 
@@ -156,7 +173,15 @@ def poll_once():
             # pérdida -- con este líder 100 trades cubren ~7 minutos, muy por
             # encima del intervalo de 1s entre polls (medido, no asumido).
             if _high_water["ts"] is not None and oldest > _high_water["ts"]:
-                n_gap_filled, gap_pages = _fill_gap(oldest, now)
+                gap_s = oldest - _high_water["ts"]
+                if gap_s <= MAX_GAP_SECONDS_TO_AUTOFILL:
+                    n_gap_filled, gap_pages = _fill_gap(oldest, now)
+                else:
+                    db.log_event("leader_trades", "gap_too_large_to_autofill", {
+                        "segundos_de_hueco": gap_s,
+                        "nota": "hueco demasiado grande para el camino en vivo (típico al "
+                                "arrancar con marca de agua vieja); usar backfill.py --api "
+                                "si se quiere recuperar esa historia"})
 
             if _high_water["ts"] is None or newest > _high_water["ts"]:
                 _high_water["ts"] = newest

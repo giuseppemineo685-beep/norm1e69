@@ -21,6 +21,7 @@ import time
 from pathlib import Path
 
 import db
+import markets_collector
 import polymarket_api as pm
 from config import LEADER_WALLET, REPO_ROOT
 
@@ -75,6 +76,40 @@ def import_live_trades_jsonl(path: Path = LIVE_TRADES_JSONL):
     return n
 
 
+def enrich_missing_market_info(limit_markets=500):
+    """Rellena market_slug/asset_symbol/seconds_since_open/seconds_to_close en
+    los trades que quedaron sin metadata de mercado (típicamente los de
+    BACKFILL, cuyas ventanas ya estaban cerradas). Resuelve cada mercado UNA
+    vez por condition_id y actualiza todos sus trades de una."""
+    with db.connect() as conn:
+        cids = [r["condition_id"] for r in conn.execute(
+            """SELECT DISTINCT condition_id FROM leader_trades
+               WHERE condition_id IS NOT NULL AND seconds_to_market_close IS NULL
+               LIMIT ?""", (limit_markets,)).fetchall()]
+
+    print(f"enriqueciendo metadata de {len(cids)} mercados...")
+    n_markets = n_trades = 0
+    for cid in cids:
+        m = pm.get_market_by_condition_id(cid)
+        if not m or m.start_ts is None:
+            continue
+        with db.connect() as conn:
+            markets_collector.upsert_market(m, conn)
+            cur = conn.execute(
+                """UPDATE leader_trades
+                   SET market_slug = COALESCE(market_slug, ?),
+                       asset_symbol = COALESCE(asset_symbol, ?),
+                       seconds_since_market_open = source_timestamp_utc - ?,
+                       seconds_to_market_close = ? - source_timestamp_utc
+                   WHERE condition_id = ? AND seconds_to_market_close IS NULL""",
+                (m.market_slug, m.asset_symbol, m.start_ts, m.end_ts, cid),
+            )
+            n_trades += cur.rowcount
+        n_markets += 1
+    print(f"enriquecidos {n_trades} trades de {n_markets} mercados")
+    return n_trades
+
+
 def backfill_data_api(max_pages=20, page_size=100):
     """Best-effort: intenta paginar hacia atrás con `offset`. Si la API no lo
     soporta, la primera página repetida detiene el intento sin loop infinito."""
@@ -122,5 +157,7 @@ def backfill_data_api(max_pages=20, page_size=100):
 if __name__ == "__main__":
     db.init_db()
     import_live_trades_jsonl()
+    if "--enrich" in sys.argv:
+        enrich_missing_market_info()
     if "--api" in sys.argv:
         backfill_data_api()

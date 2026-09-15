@@ -11,17 +11,22 @@ import polymarket_api as pm
 from config import ASSETS, RESOLVE_CHECK_INTERVAL_SEC
 
 
-def upsert_market(m: pm.Market):
-    with db.connect() as conn:
-        conn.execute(
+def upsert_market(m: pm.Market, conn=None):
+    def _do(c):
+        c.execute(
             """INSERT INTO markets (condition_id, market_slug, market_title, asset_symbol,
                                      token_up_id, token_down_id, open_time_utc, close_time_utc,
-                                     discovered_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                     window_minutes, discovered_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(condition_id) DO NOTHING""",
             (m.condition_id, m.market_slug, m.market_title, m.asset_symbol,
-             m.token_up, m.token_down, m.start_ts, m.end_ts, time.time()),
+             m.token_up, m.token_down, m.start_ts, m.end_ts, m.window_minutes, time.time()),
         )
+    if conn is not None:
+        _do(conn)
+    else:
+        with db.connect() as c:
+            _do(c)
 
 
 # Cache compartida del descubrimiento de mercados. Sin esto, los 4 flujos que
@@ -36,19 +41,21 @@ _cache_lock = threading.Lock()
 
 
 def active_markets(force: bool = False) -> dict:
-    """Returns {asset: pm.Market} for whichever 5-min window is live right now,
-    per tracked asset. Also upserts them into `markets`."""
+    """Returns {condition_id: pm.Market} de TODAS las ventanas Up/Down vivas
+    ahora mismo: 3 assets x 2 duraciones (5m y 15m). Antes solo devolvía la de
+    5m por asset, y así los mercados de 15m que el líder también opera
+    quedaban sin order book. También las inserta en `markets`."""
     now = time.time()
     with _cache_lock:
         if not force and now - _cache["at"] < _CACHE_TTL_S and _cache["markets"]:
             return _cache["markets"]
 
     out = {}
-    for asset in ASSETS:
-        m = pm.find_active_window(asset)
-        if m:
-            upsert_market(m)
-            out[asset] = m
+    with db.connect() as conn:
+        for asset in ASSETS:
+            for m in pm.find_active_windows(asset):
+                upsert_market(m, conn)
+                out[m.condition_id] = m
 
     with _cache_lock:
         # Si una vuelta falló entera (red caída), se conserva lo anterior en vez
@@ -57,6 +64,18 @@ def active_markets(force: bool = False) -> dict:
             _cache["markets"] = out
             _cache["at"] = now
         return _cache["markets"]
+
+
+def primary_markets_by_asset() -> dict:
+    """{asset_lower: Market} quedándose con la ventana de 5m (la dominante:
+    97% de los trades del líder) -- para los flujos que necesitan UNA ventana
+    de referencia por asset, como el precio del subyacente."""
+    out = {}
+    for m in active_markets().values():
+        asset = m.asset_symbol.lower()
+        if m.window_minutes == 5 or asset not in out:
+            out[asset] = m
+    return out
 
 
 def refresh_resolutions():

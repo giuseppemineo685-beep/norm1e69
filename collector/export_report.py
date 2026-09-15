@@ -107,13 +107,27 @@ def _flatten_quality(report):
     return flat
 
 
+def _fieldnames(rows):
+    """Union de las claves de TODAS las filas, en orden estable de aparición.
+    No alcanza con mirar rows[0]: las columnas legibles *_utc_str/*_et_str solo
+    se agregan cuando el timestamp no es NULL, así que una fila posterior puede
+    traer columnas que la primera no tenía."""
+    names = []
+    seen = set()
+    for r in rows:
+        for k in r:
+            if k not in seen:
+                seen.add(k)
+                names.append(k)
+    return names
+
+
 def write_csv(rows, path):
     if not rows:
         path.write_text("")
         return
-    fieldnames = list(rows[0].keys())
     with open(path, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w = csv.DictWriter(f, fieldnames=_fieldnames(rows), restval="")
         w.writeheader()
         w.writerows(rows)
 
@@ -141,7 +155,7 @@ def export(out_dir: Path, want_xlsx: bool):
         for name, rows in data.items():
             ws = wb.create_sheet(title=name[:31])
             if rows:
-                headers = list(rows[0].keys())
+                headers = _fieldnames(rows)
                 ws.append(headers)
                 ws.freeze_panes = "A2"
                 for r in rows:

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS markets (
     winner TEXT,                     -- 'Up' | 'Down' | NULL while open
     resolution_source TEXT,          -- verbatim string from the API (e.g. Chainlink feed)
     open_reference_price REAL,       -- underlying price at open, if known
+    window_minutes INTEGER,          -- 5 o 15: el líder opera ambas duraciones
     discovered_at REAL NOT NULL
 );
 
@@ -246,6 +247,9 @@ def connect():
 # ya existente. Nunca se borra ni se reescribe nada -- una db vieja sigue
 # siendo válida, solo gana columnas nuevas en NULL.
 MIGRATIONS = {
+    "markets": {
+        "window_minutes": "INTEGER",
+    },
     "leader_poll_log": {
         "oldest_ts_in_page": "REAL",
         "newest_ts_in_page": "REAL",

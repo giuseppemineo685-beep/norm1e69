@@ -47,3 +47,12 @@ TIMEZONE_ET = "America/New_York"
 # que funciona en data-api) hasta cruzar la marca de agua. Este tope evita que
 # un hueco enorme (ej. tras una caída larga) dispare cientos de requests.
 MAX_GAP_FILL_PAGES = 20
+
+# Un hueco más grande que esto NO se rellena por el camino en vivo: al arrancar
+# con una marca de agua vieja (ej. la del backfill de live_trades.jsonl), el
+# relleno automático arrastraba HORAS de historia, llenando la cola de trades
+# cuyos mercados ya habían cerrado antes de que existiera este collector (y por
+# lo tanto sin order book posible). Se registra el hueco y se sigue desde lo
+# más reciente; para traer historia vieja está `backfill.py --api`, que es
+# explícito.
+MAX_GAP_SECONDS_TO_AUTOFILL = 600

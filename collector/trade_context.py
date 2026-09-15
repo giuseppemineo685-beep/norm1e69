@@ -172,7 +172,7 @@ def recompute_pending(batch_size=200):
             """SELECT lt.* FROM leader_trades lt
                LEFT JOIN trade_context tc ON tc.leader_trade_id = lt.id AND tc.offset_seconds = 0
                WHERE tc.id IS NULL
-               ORDER BY lt.id LIMIT ?""",
+               ORDER BY lt.source_timestamp_utc DESC LIMIT ?""",
             (batch_size,),
         ).fetchall()
         for trade in pending:
