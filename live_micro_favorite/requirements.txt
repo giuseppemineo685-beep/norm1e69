@@ -1,0 +1,21 @@
+# Dependencia REAL para el modo LIVE (make_client/place_fak_market_buy en
+# live_micro_favorite_order_client.py). El DRY_RUN NO la necesita -- nunca
+# importa `polymarket` (ver ese archivo: el import vive dentro de
+# make_client(), no al nivel de modulo).
+#
+# Version fijada exacta: la que se inspecciono y verifico (2026-09-16) para
+# confirmar que max_spend/max_price quedan codificados en la orden firmada.
+# No actualizar sin re-verificar el mecanismo -- ver
+# docs/LIVE_MICRO_FAVORITE.md, seccion "Verificacion del mecanismo de
+# proteccion de precio real".
+polymarket-client==0.10.0
+
+# Dependencia TRANSITIVA de collector/export_paper_validation.py, importado
+# por live_micro_favorite_executor.py solo para reusar
+# estimated_taker_fee_usd() (formula de fee verificada) -- sin esto, hasta
+# el DRY_RUN falla al importar.
+openpyxl==3.1.5
+
+# Solo para correr tests/ (tests/test_live_micro_favorite.py) -- no se usa
+# en run_live_micro_favorite.py.
+pytest>=8.0

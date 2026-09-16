@@ -14,3 +14,18 @@ collector/export/
 
 collector/*.log
 collector/.pytest_cache/
+
+# live_micro_favorite: venv exclusivo, credenciales, DB y logs -- nada de
+# esto se versiona nunca.
+live_micro_favorite/venv/
+live_micro_favorite/.env
+live_micro_favorite/live_micro_favorite.db
+live_micro_favorite/live_micro_favorite.db-wal
+live_micro_favorite/live_micro_favorite.db-shm
+live_micro_favorite/*.log
+live_micro_favorite/.pytest_cache/
+
+# private keys / secretos, cualquier ubicacion -- red de seguridad generica
+*.pem
+*.key
+*_private_key*
