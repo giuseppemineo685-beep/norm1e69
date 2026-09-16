@@ -17,10 +17,18 @@ import openpyxl
 
 import paper_validation_db as pdb
 
-# Fee de TAKER de Polymarket, categoria crypto -- VERIFICADO contra
-# docs.polymarket.com/trading/fees (consultado 2026-09-16) y cruzado con
-# multiples fuentes secundarias de 2026. Formula oficial:
+# Fee de TAKER de Polymarket -- VERIFICADO contra docs.polymarket.com/trading/fees
+# (consultado 2026-09-16) y cruzado con multiples fuentes secundarias de 2026,
+# pero SOLO a nivel de TARIFA GENERAL DE CATEGORIA. Formula oficial:
 #   fee = shares * TAKER_FEE_RATE_CRYPTO * price * (1 - price)
+# 0.07 es la tasa que la documentacion asigna a la categoria "crypto" como
+# CONJUNTO -- se aplica aqui de forma UNIFORME a los 3 mercados (BTC/ETH/SOL
+# Up/Down 5min) porque los tres caen en esa misma categoria. NO se verifico
+# si existe una variacion de parametro POR MERCADO especifico dentro de esa
+# categoria (por activo, por liquidez, por programa de market-making, etc.)
+# -- si Polymarket documentara una excepcion asi, esta constante quedaria
+# desactualizada. Mientras esos parametros especificos no esten verificados,
+# 0.07 es una ASUNCION GENERAL, no una tarifa confirmada mercado-por-mercado.
 # Maker = 0% (no aplica: las 3 estrategias siempre cruzan contra el ask,
 # nunca dejan orden resting -- son 100% taker). Pico de $1.75 por 100 shares
 # a precio=0.50, coincide con lo reportado por las fuentes.
@@ -37,13 +45,16 @@ import paper_validation_db as pdb
 # decisiones guardados (paper_decisions/paper_resolutions no se tocan),
 # solo a un calculo derivado y separado en el reporte.
 TAKER_FEE_RATE_CRYPTO = 0.07
-TAKER_FEE_SOURCE = "docs.polymarket.com/trading/fees (categoria crypto), consultado 2026-09-16"
+TAKER_FEE_SOURCE = ("docs.polymarket.com/trading/fees (tarifa GENERAL de la categoria crypto, no "
+                     "verificada mercado-por-mercado), consultado 2026-09-16")
 ESTIMATED_FEE_METHOD_NOTE = (
-    "APROXIMADO: fee = shares * 0.07 * VWAP_ejecutable * (1-VWAP_ejecutable) por fill. Usa el "
-    "VWAP agregado de la caminata de profundidad, no el precio exacto de cada nivel individual "
-    "dentro del fill -- una aproximacion razonable, no un calculo nivel-por-nivel exacto. "
-    "NO es beneficio neto definitivo: no incluye fee de redencion (desconocido, no verificado, "
-    "no aplicado), rebates de maker, ni ningun otro costo."
+    "APROXIMADO Y GENERAL: fee = shares * 0.07 * VWAP_ejecutable * (1-VWAP_ejecutable) por fill. "
+    "0.07 es la tarifa de categoria 'crypto' asumida de forma UNIFORME para BTC/ETH/SOL -- no se "
+    "verificaron parametros especificos por mercado individual (si existieran, esta cifra podria "
+    "no aplicar igual a los tres). Ademas usa el VWAP agregado de la caminata de profundidad, no "
+    "el precio exacto de cada nivel individual dentro del fill. NO es beneficio neto definitivo: "
+    "no incluye fee de redencion (desconocido, no verificado, no aplicado), rebates de maker, ni "
+    "ningun otro costo."
 )
 
 
@@ -88,6 +99,18 @@ def build(out_path):
     wb.remove(wb.active)
 
     with pdb.connect() as conn:
+        # Transaccion de LECTURA explicita: sin esto, cada SELECT suelto en este
+        # bloque es su propio snapshot independiente (confirmado con una
+        # reproduccion real: la MISMA conexion, sin BEGIN, SI ve escrituras de
+        # run_paper_validation.py hechas a mitad de la exportacion). BEGIN
+        # DEFERRED fija un unico snapshot consistente (WAL) para TODAS las
+        # queries de esta corrida -- se suma a REPORT_CUTOFF_TS (que da
+        # consistencia LOGICA por timestamp), no lo reemplaza: juntos garantizan
+        # que ninguna hoja pueda ver un estado de la base distinto de otra.
+        # commit() al final del context manager solo libera el snapshot de
+        # lectura -- no escribe nada (este modulo nunca escribe en paper_validation.db).
+        conn.execute("BEGIN DEFERRED")
+
         # ---------- Overview ----------
         ws = wb.create_sheet("Overview")
         ws["A1"] = ("Validacion forward en PAPER TRADING -- SOLO simulacion, datos completamente "
@@ -102,6 +125,11 @@ def build(out_path):
                     f"instante -- decisiones/coberturas/resoluciones posteriores a este corte, si el "
                     f"validador las genero mientras se armaba este Excel, NO estan incluidas todavia (se "
                     f"veran en la proxima corrida). Esto evita que los conteos difieran entre hojas.")
+        ws["A4"] = ("CONSISTENCIA DE LECTURA: ademas del corte por timestamp de arriba, toda la exportacion "
+                    "corre dentro de UNA sola transaccion de lectura (BEGIN DEFERRED), asi que ninguna hoja "
+                    "puede ver un estado de paper_validation.db distinto de otra -- verificado con una "
+                    "reproduccion real (sin esto, la misma conexion SI llegaba a ver escrituras del "
+                    "validador a mitad de la exportacion).")
         cutoff = pdb.get_meta("validator_started_at")
         n_markets = conn.execute(
             "SELECT count(*) c FROM paper_markets WHERE discovered_at <= ?", (REPORT_CUTOFF_TS,)
@@ -146,7 +174,7 @@ def build(out_path):
         ws.append(["campo", "valor"])
         for k, v in overview:
             ws.append([k, v])
-        ws.freeze_panes = "A5"
+        ws.freeze_panes = "A6"
 
         # ---------- Signals (decisions) ----------
         ws = wb.create_sheet("Signals")
@@ -448,6 +476,128 @@ def build(out_path):
                           "skip_or_partial_reason", "created_at_human"], gap_rows, start_row=10)
         ws.column_dimensions["A"].width = 26
         ws.freeze_panes = "A11"
+
+        # ---------- Daily & Cumulative ----------
+        ws = wb.create_sheet("Daily & Cumulative")
+        ws["A1"] = ("Mercados OFFICIAL clasificados en exactamente uno de 4 estados (a nivel de "
+                    "MERCADO, no de decision individual): PENDIENTE (decision_time_utc aun no llego, o "
+                    "no tiene ninguna decision registrada todavia), EJECUTADO (>=1 de las 3 estrategias "
+                    "cerro FULL/PARTIAL), OMITIDO (las 3 estrategias SKIPPED/NO_TRADE, ninguna entro). "
+                    "'Hoy' = dia calendario UTC actual. 'Acumulado' = desde el arranque del validador.")
+
+        official_markets = _rows(conn, """
+            SELECT condition_id, asset_symbol, open_time_utc, decision_time_utc FROM paper_markets
+            WHERE validation_cohort='OFFICIAL' AND discovered_at <= ?
+        """, REPORT_CUTOFF_TS)
+        decisions_by_market = defaultdict(list)
+        for d in _rows(conn, "SELECT * FROM paper_decisions WHERE created_at <= ?", REPORT_CUTOFF_TS):
+            decisions_by_market[d["condition_id"]].append(d)
+
+        def _classify_market(m):
+            decs = decisions_by_market.get(m["condition_id"], [])
+            if m["decision_time_utc"] > REPORT_CUTOFF_TS or len(decs) < 3:
+                return "PENDIENTE"
+            if any(d["fill_status"] in ("FULL", "PARTIAL") for d in decs):
+                return "EJECUTADO"
+            return "OMITIDO"
+
+        today_utc_date = datetime.fromtimestamp(REPORT_CUTOFF_TS, timezone.utc).date()
+
+        def _funnel(markets):
+            counts = {"EVALUADOS": len(markets), "EJECUTADO": 0, "OMITIDO": 0, "PENDIENTE": 0}
+            by_asset = defaultdict(lambda: {"EVALUADOS": 0, "EJECUTADO": 0, "OMITIDO": 0, "PENDIENTE": 0})
+            for m in markets:
+                c = _classify_market(m)
+                counts[c] += 1
+                by_asset[m["asset_symbol"]]["EVALUADOS"] += 1
+                by_asset[m["asset_symbol"]][c] += 1
+            return counts, by_asset
+
+        markets_today = [m for m in official_markets
+                          if datetime.fromtimestamp(m["open_time_utc"], timezone.utc).date() == today_utc_date]
+        funnel_cum, funnel_cum_asset = _funnel(official_markets)
+        funnel_today, funnel_today_asset = _funnel(markets_today)
+
+        funnel_rows = []
+        for label, counts, by_asset in (("HOY", funnel_today, funnel_today_asset),
+                                          ("ACUMULADO", funnel_cum, funnel_cum_asset)):
+            row = {"periodo": label, **counts}
+            for asset in ("BTC", "ETH", "SOL"):
+                a = by_asset.get(asset, {"EVALUADOS": 0, "EJECUTADO": 0, "OMITIDO": 0, "PENDIENTE": 0})
+                for k, v in a.items():
+                    row[f"{asset}_{k}"] = v
+            funnel_rows.append(row)
+        funnel_headers = ["periodo", "EVALUADOS", "EJECUTADO", "OMITIDO", "PENDIENTE"]
+        for asset in ("BTC", "ETH", "SOL"):
+            funnel_headers += [f"{asset}_EVALUADOS", f"{asset}_EJECUTADO", f"{asset}_OMITIDO", f"{asset}_PENDIENTE"]
+        next_row_f = _write_table(ws, funnel_headers, funnel_rows, start_row=3)
+
+        # P&L bruto/post-fee, hoy vs acumulado, mismas estrategias
+        def _pnl_block(rows_subset, label):
+            out = []
+            for strategy in ("MOMENTUM_PURE", "MOMENTUM_PARTIAL_HEDGE", "POLYMARKET_FAVORITE_BASELINE"):
+                rs = [r for r in rows_subset if r["strategy"] == strategy]
+                n = len(rs)
+                capital = sum(r["capital_deployed_usd"] for r in rs)
+                pnl = sum(r["pnl_usd"] for r in rs)
+                fees = sum(r["estimated_taker_fee_usd"] for r in rs)
+                out.append({
+                    "periodo": label, "strategy": strategy, "n_resolved": n,
+                    "capital_usd": round(capital, 2), "gross_pnl_usd": round(pnl, 2),
+                    "gross_roi_pct": round(pnl / capital * 100, 2) if capital else None,
+                    "estimated_fees_usd": round(fees, 4),
+                    "estimated_pnl_after_fee_usd": round(pnl - fees, 2),
+                    "estimated_roi_after_fee_pct": round((pnl - fees) / capital * 100, 2) if capital else None,
+                })
+            return out
+
+        official_res_today = [r for r in official_res_rows
+                               if datetime.fromtimestamp(r["resolved_at_utc"], timezone.utc).date() == today_utc_date]
+        pnl_rows = _pnl_block(official_res_today, "HOY") + _pnl_block(official_res_rows, "ACUMULADO")
+        ws.cell(row=next_row_f + 1, column=1, value="P&L bruto y estimado post-fee, HOY vs ACUMULADO:")
+        next_row_pnl = _write_table(ws, ["periodo", "strategy", "n_resolved", "capital_usd", "gross_pnl_usd",
+                                          "gross_roi_pct", "estimated_fees_usd", "estimated_pnl_after_fee_usd",
+                                          "estimated_roi_after_fee_pct"], pnl_rows, start_row=next_row_f + 3)
+
+        # Momentum vs Favorite, mismos condition_id, HOY vs ACUMULADO
+        def _common_cmp(rows_subset, label):
+            mom = {r["condition_id"]: r for r in rows_subset if r["strategy"] == "MOMENTUM_PURE"}
+            fav = {r["condition_id"]: r for r in rows_subset if r["strategy"] == "POLYMARKET_FAVORITE_BASELINE"}
+            common = set(mom) & set(fav)
+            out = []
+            for tag, d in (("MOMENTUM", mom), ("FAVORITE", fav)):
+                rs = [d[c] for c in common]
+                n = len(rs)
+                capital = sum(r["capital_deployed_usd"] for r in rs)
+                pnl = sum(r["pnl_usd"] for r in rs)
+                out.append({"periodo": label, "n_common_mercados": len(common), "strategy": tag,
+                            "capital_usd": round(capital, 2), "gross_pnl_usd": round(pnl, 2),
+                            "gross_roi_pct": round(pnl / capital * 100, 2) if capital else None})
+            return out
+
+        cmp_rows2 = _common_cmp(official_res_today, "HOY") + _common_cmp(official_res_rows, "ACUMULADO")
+        ws.cell(row=next_row_pnl + 1, column=1, value="Momentum vs Favorito, mismos condition_id, HOY vs ACUMULADO:")
+        next_row_cmp2 = _write_table(ws, ["periodo", "n_common_mercados", "strategy", "capital_usd",
+                                           "gross_pnl_usd", "gross_roi_pct"], cmp_rows2, start_row=next_row_pnl + 3)
+
+        # Huecos y horas efectivamente cubiertas
+        validator_start = float(cutoff) if cutoff else None
+        SLEEP_GAP_HOURS = (1789552797.277 - 1789551755.0) / 3600.0  # unico hueco documentado hasta ahora, ver Sleep Audit
+        total_hours = (REPORT_CUTOFF_TS - validator_start) / 3600.0 if validator_start else None
+        effective_hours = (total_hours - SLEEP_GAP_HOURS) if total_hours is not None else None
+        coverage_rows = [{
+            "validador_arrancado_utc": fmt(validator_start), "horas_totales_desde_arranque": round(total_hours, 2) if total_hours else None,
+            "huecos_documentados_horas": round(SLEEP_GAP_HOURS, 3),
+            "horas_efectivamente_cubiertas": round(effective_hours, 2) if effective_hours else None,
+            "pct_cobertura": round(effective_hours / total_hours * 100, 2) if total_hours else None,
+            "detalle_huecos": "1 hueco: sueno por tapa cerrada 2026-09-16 09:42:35-09:59:57 UTC (~17.4min) -- ver hoja Sleep Audit",
+        }]
+        ws.cell(row=next_row_cmp2 + 1, column=1, value="Huecos y horas efectivamente cubiertas:")
+        _write_table(ws, ["validador_arrancado_utc", "horas_totales_desde_arranque", "huecos_documentados_horas",
+                          "horas_efectivamente_cubiertas", "pct_cobertura", "detalle_huecos"],
+                     coverage_rows, start_row=next_row_cmp2 + 3)
+        ws.column_dimensions["A"].width = 26
+        ws.freeze_panes = "A4"
 
         # ---------- Methodology ----------
         ws = wb.create_sheet("Methodology")
