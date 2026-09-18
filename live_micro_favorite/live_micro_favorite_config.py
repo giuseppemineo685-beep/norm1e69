@@ -50,6 +50,24 @@ ORDER_TYPE = "FAK"                  # fill-and-kill / marketable limit -- nunca 
 LIMIT_PRICE_BUFFER = 0.0            # limit_price = best_ask + esto. 0.0 = el mas conservador:
 # si el book se movio ni un tick desde el snapshot fresco, el FAK no llena
 # (nunca paga peor de lo que se vio) en vez de arriesgar slippage.
+# Solo usado como referencia/gate para DRY_RUN -- LIVE calcula su propio
+# max_price contra el book en vivo, ver MAX_PAPER_PRICE_SLIPPAGE abajo.
+
+# ----------------------------------------------- reintentos LIVE (2026-09-17) ---
+# Propuesta del handoff: en vez de fiarse del snapshot guardado en data.db
+# como cotizacion final de ejecucion, LIVE re-consulta el order book REAL
+# del CLOB (lectura publica, sin credenciales) inmediatamente antes de cada
+# envio. Cada mercado candidato puede generar hasta MAX_LIVE_SUBMISSIONS_PER_MARKET
+# envios REALES (cada uno cuenta individualmente contra MAX_ORDERS/kill
+# switch, igual que antes) -- se detiene en el primer FILLED/PARTIAL, o tras
+# agotar el tope sin fill. Mientras MAX_ORDERS=1 (temporal, ver arriba) esto
+# en la practica sigue limitado a 1 envio real total por corrida -- subir
+# MAX_ORDERS es una decision aparte, no implicita en este cambio.
+MAX_LIVE_SUBMISSIONS_PER_MARKET = 3
+MAX_PAPER_PRICE_SLIPPAGE = 0.02     # si el precio ejecutable EN VIVO (para el monto
+# completo MAX_ORDER_USD) supera paper_expected_price en mas de esto, no se
+# envia ninguna orden en ese intento (no consume cupo de MAX_LIVE_SUBMISSIONS_PER_MARKET)
+# y se detiene esta oportunidad -- fail closed, nunca se persigue el precio.
 
 # --------------------------------------------------------- credenciales ---
 # Nombres DISTINTOS a los del bot viejo (POLY_PRIVATE_KEY/POLY_FUNDER/LIVE/

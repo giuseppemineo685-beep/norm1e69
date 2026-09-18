@@ -336,6 +336,174 @@ def test_dry_run_skipped_by_kill_switch_when_already_tripped(monkeypatch):
     assert row["fill_status"] == "SKIPPED_KILL_SWITCH"
 
 
+# ==================================== LIVE: book en vivo + reintentos (2026-09-17) ===
+def _live_ok_meta():
+    return {"tick_size": 0.01, "minimum_order_size": 1.0, "raw": {}}
+
+
+class _FakeResp:
+    def __init__(self, making_amount=None, taking_amount=None, status=None,
+                 order_id=None, transactions_hashes=None):
+        self.making_amount = making_amount
+        self.taking_amount = taking_amount
+        self.status = status
+        self.order_id = order_id
+        self.transactions_hashes = transactions_hashes
+
+
+def test_live_uses_live_book_price_not_db_snapshot_and_fills_first_try(monkeypatch):
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    # snapshot de data.db dice 0.70 (ver _build_scenario), pero el book EN
+    # VIVO se movio a 0.71 -- la orden debe usar el precio en vivo, no el guardado.
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.71, "size": 100}])
+    calls = []
+
+    def _fake_submit(client, token_id, amount, max_spend, max_price):
+        calls.append(max_price)
+        return _FakeResp(making_amount=2.0, taking_amount=2.816, status="matched", order_id="oid1"), 42.0
+    monkeypatch.setattr(oc, "place_fak_market_buy", _fake_submit)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert attempted
+    assert row["fill_status"] == "FILLED"
+    assert row["paper_expected_price"] == 0.70          # la decision congelada sigue viniendo del snapshot DB
+    assert calls == [0.72]                               # min(0.71 + tick 0.01, 0.70 + 0.02) = 0.72
+    assert row["limit_price"] == 0.72
+    subs = json.loads(row["api_response_json"])["submissions"]
+    assert len(subs) == 1
+    assert state["n_orders_attempted"] == 1
+
+
+def test_live_skips_without_consuming_attempt_when_live_price_too_far_from_paper(monkeypatch):
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.80, "size": 100}])  # +0.10 vs paper 0.70
+
+    def _boom(*a, **k):
+        raise AssertionError("no debe enviar ninguna orden si el precio en vivo supera el gate de slippage")
+    monkeypatch.setattr(oc, "place_fak_market_buy", _boom)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert not attempted
+    assert row["fill_status"] == "SKIPPED_PRICE_MOVED_TOO_FAR"
+    assert state["n_orders_attempted"] == 0
+
+
+def test_live_retries_up_to_three_times_and_stops_after_three_unmatched(monkeypatch):
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(cfg, "MAX_ORDERS", 10)             # temporal =1 en config real; se sube solo para este test
+    monkeypatch.setattr(cfg, "MAX_CAPITAL_DEPLOYED_USD", 20.0)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.70, "size": 100}])
+    monkeypatch.setattr(oc, "place_fak_market_buy",
+        lambda client, token_id, amount, max_spend, max_price: (
+            _FakeResp(making_amount=0.0, taking_amount=0.0, status="unmatched"), 10.0))
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert attempted
+    assert row["fill_status"] == "REJECTED"
+    assert "agotados los 3" in row["reject_reason"]
+    subs = json.loads(row["api_response_json"])["submissions"]
+    assert len(subs) == 3
+    assert state["n_orders_attempted"] == 3
+
+
+def test_live_stops_immediately_on_second_attempt_fill_never_tries_a_third(monkeypatch):
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(cfg, "MAX_ORDERS", 10)
+    monkeypatch.setattr(cfg, "MAX_CAPITAL_DEPLOYED_USD", 20.0)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.70, "size": 100}])
+    responses = [
+        (_FakeResp(making_amount=0.0, taking_amount=0.0, status="unmatched"), 10.0),
+        (_FakeResp(making_amount=1.0, taking_amount=1.4, status="matched", order_id="oid2"), 10.0),
+    ]
+    calls = {"n": 0}
+
+    def _fake_submit(client, token_id, amount, max_spend, max_price):
+        resp, lat = responses[calls["n"]]
+        calls["n"] += 1
+        return resp, lat
+    monkeypatch.setattr(oc, "place_fak_market_buy", _fake_submit)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert row["fill_status"] == "PARTIAL"
+    assert calls["n"] == 2
+    subs = json.loads(row["api_response_json"])["submissions"]
+    assert len(subs) == 2
+
+
+def test_live_temporary_max_orders_of_1_still_caps_retries_to_one_real_submission(monkeypatch):
+    """MAX_ORDERS=1 (temporal en config real) debe seguir limitando a 1
+    envio real total por corrida, aunque MAX_LIVE_SUBMISSIONS_PER_MARKET
+    permita hasta 3 -- este cambio no sube por si solo el tope de dinero real."""
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    assert cfg.MAX_ORDERS == 1
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.70, "size": 100}])
+    calls = {"n": 0}
+
+    def _fake_submit(client, token_id, amount, max_spend, max_price):
+        calls["n"] += 1
+        return _FakeResp(making_amount=0.0, taking_amount=0.0, status="unmatched"), 10.0
+    monkeypatch.setattr(oc, "place_fak_market_buy", _fake_submit)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    # el 1er envio (unmatched) hace que n_orders_attempted(1) alcance
+    # MAX_ORDERS(1) -- record_execution_outcome trip-ea el kill switch ahi
+    # mismo, y el loop se detiene sin siquiera intentar una 2da vuelta.
+    assert calls["n"] == 1
+    assert row["fill_status"] == "REJECTED"
+    assert state["kill_switch_tripped"]
+    assert state["n_orders_attempted"] == 1
+
+
+def test_live_book_unavailable_is_fail_closed_no_submission(monkeypatch):
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: None)  # CLOB no respondio / book vacio
+
+    def _boom(*a, **k):
+        raise AssertionError("sin book en vivo no debe enviarse ninguna orden")
+    monkeypatch.setattr(oc, "place_fak_market_buy", _boom)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert not attempted
+    assert row["fill_status"] == "SKIPPED_LIVE_BOOK_UNAVAILABLE"
+    assert state["n_orders_attempted"] == 0
+
+
 # ============================================== prueba puntual: 1 intento y stop ===
 def test_max_orders_is_temporarily_1_and_stop_after_first_attempt_is_on():
     """Verifica el override temporal pedido: max_orders=1 y el proceso debe

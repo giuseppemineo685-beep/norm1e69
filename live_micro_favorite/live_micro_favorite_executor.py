@@ -11,13 +11,27 @@ max_price, NO limit order por shares -- ver ese archivo para la
 justificacion completa), la UNICA funcion de todo este modulo que puede
 mover plata real.
 
-Precio/profundidad de EJECUCION: se re-consulta el snapshot mas fresco
-disponible AL MOMENTO REAL DEL INTENTO (now_wall_clock), no el snapshot
-anclado al instante de decision -- la misma correccion ya aplicada y
-validada contra datos reales en live_micro/live_micro_executor.py (ver ese
-commit): comparar "ahora" contra un instante fijo del pasado hacia que el
-chequeo de frescura de 1s casi nunca pasara, aunque el collector si tuviera
-datos frescos en tiempo real.
+Precio/profundidad de EJECUCION (DRY_RUN y el gate inicial de staleness):
+se re-consulta el snapshot mas fresco disponible AL MOMENTO REAL DEL
+INTENTO (now_wall_clock), no el snapshot anclado al instante de decision --
+la misma correccion ya aplicada y validada contra datos reales en
+live_micro/live_micro_executor.py (ver ese commit): comparar "ahora" contra
+un instante fijo del pasado hacia que el chequeo de frescura de 1s casi
+nunca pasara, aunque el collector si tuviera datos frescos en tiempo real.
+
+Precio de EJECUCION real en LIVE (2026-09-17): cada envio REAL (hasta
+cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET) NO usa el snapshot de data.db como
+cotizacion final -- se re-consulta el order book EN VIVO del CLOB
+(live_micro_favorite_order_client.get_live_ask_levels(), lectura publica)
+inmediatamente antes de cada envio, se calcula el precio ejecutable para el
+monto completo, y se compara contra paper_expected_price (la decision
+congelada): si se alejo mas de cfg.MAX_PAPER_PRICE_SLIPPAGE, no se envia
+nada (no consume cupo) y se detiene esa oportunidad. max_price de cada
+envio = min(precio ejecutable en vivo + 1 tick, paper_expected_price +
+MAX_PAPER_PRICE_SLIPPAGE). Se detiene en el primer FILLED/PARTIAL, o tras
+agotar los 3 intentos sin fill. El snapshot de data.db se sigue usando para
+el gate de staleness inicial y como referencia en row["snapshot_id"]/
+depth_json, nunca como la cotizacion que arma la orden LIVE.
 
 No importa scripts.live_trader en ningun punto. No importa `polymarket`
 directamente (eso vive solo en live_micro_favorite_order_client.py). Este
@@ -68,6 +82,30 @@ def _snapshot_and_depth(dconn, snapshot_id):
         "SELECT level, price, size FROM orderbook_levels WHERE snapshot_id=? AND side='ask' ORDER BY level",
         (snapshot_id,)).fetchall()
     return [{"level": l["level"], "price": l["price"], "size": l["size"]} for l in levels]
+
+
+def _walk_live_levels(levels, target_usd):
+    """Misma logica que audit_strategy_v1.walk_executable, pero sobre una
+    lista de niveles 'ask' ya en memoria (el book EN VIVO recien consultado
+    via oc.get_live_ask_levels()), no sobre orderbook_levels en data.db.
+    Devuelve (status, shares, usd_gastado, vwap) -- 'FULL' si target_usd se
+    llena completo con la profundidad dada, 'PARTIAL' si no alcanza."""
+    remaining_usd = target_usd
+    shares = 0.0
+    spent = 0.0
+    for lvl in levels:
+        price, size = lvl["price"], lvl["size"]
+        if price <= 0 or size <= 0:
+            continue
+        take_usd = min(remaining_usd, price * size)
+        shares += take_usd / price
+        spent += take_usd
+        remaining_usd -= take_usd
+        if remaining_usd <= 1e-9:
+            break
+    status = "FULL" if remaining_usd <= 1e-9 else "PARTIAL"
+    vwap = (spent / shares) if shares > 0 else None
+    return status, shares, spent, vwap
 
 
 def build_attempt(dconn, m, now_wall_clock, state, mode, client=None):
@@ -147,25 +185,27 @@ def build_attempt(dconn, m, now_wall_clock, state, mode, client=None):
     # proteccion de precio real".
     amount_usd = cfg.MAX_ORDER_USD
     max_spend_usd = cfg.MAX_ORDER_USD  # tope all-in, incluye fees -- el SDK reduce amount si hace falta
-    max_price = limit_price
     row["quantity_usd"] = amount_usd  # objetivo pre-fee; el gasto real (post-fee) queda <= max_spend_usd
 
-    # 5) limites/kill switch -- ANTES de intentar nada. Se usa MAX_ORDER_USD
-    # (el peor caso posible) para la contabilidad de capital desplegado,
-    # nunca el monto ya reducido por fees (eso se sabe recien al ejecutar).
-    ok, limit_reason = ks.check_before_order(state, amount_usd)
-    if not ok:
-        row["fill_status"] = "SKIPPED_KILL_SWITCH"
-        row["reject_reason"] = limit_reason
-        return row, False
-
-    api_request = {"asset_id": row["token_id"], "side": "BUY", "amount": amount_usd,
-                    "max_spend": max_spend_usd, "max_price": max_price, "order_type": cfg.ORDER_TYPE}
-    row["api_request_json"] = _json.dumps(api_request)
-
-    ks.record_attempt(state, amount_usd)  # a partir de aca SI cuenta como operacion intentada
-
     if mode == "DRY_RUN":
+        max_price = limit_price
+        # 5) limites/kill switch -- ANTES de intentar nada. Se usa MAX_ORDER_USD
+        # (el peor caso posible) para la contabilidad de capital desplegado,
+        # nunca el monto ya reducido por fees (eso se sabe recien al ejecutar).
+        # DRY_RUN es UN solo intento simulado -- ver la rama LIVE mas abajo
+        # para el chequeo por-envio (hasta 3 envios REALES independientes).
+        ok, limit_reason = ks.check_before_order(state, amount_usd)
+        if not ok:
+            row["fill_status"] = "SKIPPED_KILL_SWITCH"
+            row["reject_reason"] = limit_reason
+            return row, False
+
+        api_request = {"asset_id": row["token_id"], "side": "BUY", "amount": amount_usd,
+                        "max_spend": max_spend_usd, "max_price": max_price, "order_type": cfg.ORDER_TYPE}
+        row["api_request_json"] = _json.dumps(api_request)
+
+        ks.record_attempt(state, amount_usd)  # a partir de aca SI cuenta como operacion intentada
+
         t0 = time.monotonic()
         # resolved_amount: replica offline la MISMA reduccion por fee que
         # aplicaria el SDK real (adjust_buy_amount_for_fees), con la formula
@@ -195,50 +235,134 @@ def build_attempt(dconn, m, now_wall_clock, state, mode, client=None):
         ks.record_execution_outcome(state, success)
         return row, True
 
-    # mode == "LIVE" -- unico camino que puede mover plata real.
-    # Nombres de campo (making_amount/taking_amount/status/order_id/
-    # transactions_hashes) tomados de 15 respuestas REALES observadas en
-    # state/live_trades.jsonl (scripts/live_trader.py, mismo SDK), no
-    # adivinados -- ver docs/LIVE_MICRO_FAVORITE.md.
+    # mode == "LIVE" -- unico camino que puede mover plata real. Hasta
+    # cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET envios REALES independientes para
+    # ESTA oportunidad -- cada uno re-consulta el book EN VIVO del CLOB
+    # (nunca el snapshot de data.db) y se detiene en el primer FILLED/
+    # PARTIAL. Cada envio se chequea/cuenta contra el kill switch
+    # INDIVIDUALMENTE (a diferencia de DRY_RUN, que es un unico intento
+    # simulado) -- ver docs/LIVE_MICRO_FAVORITE.md, seccion "Reintentos LIVE".
+    # Nombres de campo de la respuesta (making_amount/taking_amount/status/
+    # order_id/transactions_hashes) tomados de 15 respuestas REALES
+    # observadas en state/live_trades.jsonl (scripts/live_trader.py, mismo
+    # SDK), no adivinados.
     assert cfg.LIVE_MICRO_FAVORITE_ENABLED, "LIVE alcanzado sin LIVE_MICRO_FAVORITE_ENABLED -- esto no debe pasar nunca"
-    try:
-        resp, latency_ms = oc.place_fak_market_buy(client, row["token_id"], amount_usd, max_spend_usd, max_price)
-        row["latency_ms"] = latency_ms
-        row["api_response_json"] = _json.dumps(resp, default=str)
+    row["limit_price"] = limit_price  # referencia inicial (snapshot data.db); cada envio pisa esto con su propio max_price
+    max_allowed_price = row["paper_expected_price"] + cfg.MAX_PAPER_PRICE_SLIPPAGE
+    submissions = []
+    final_success = False
 
-        making_amount = getattr(resp, "making_amount", None)   # USDC efectivamente gastado
-        taking_amount = getattr(resp, "taking_amount", None)   # shares efectivamente recibidas
-        status = getattr(resp, "status", None)
-        order_id = getattr(resp, "order_id", None)
-        tx_hashes = getattr(resp, "transactions_hashes", None)
+    for attempt_n in range(1, cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET + 1):
+        # a) kill switch -- ANTES de gastar una consulta al book en vivo.
+        ok, limit_reason = ks.check_before_order(state, amount_usd)
+        if not ok:
+            row["fill_status"] = "SKIPPED_KILL_SWITCH"
+            row["reject_reason"] = f"{limit_reason} (intento {attempt_n}/{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})"
+            break
 
-        spent = float(making_amount) if making_amount is not None else 0.0
-        shares_filled = float(taking_amount) if taking_amount is not None else 0.0
-        avg_fill_price = (spent / shares_filled) if shares_filled else None
+        # b) book EN VIVO del CLOB, re-consultado ahora mismo -- no el
+        # snapshot de data.db. Fail closed si no responde o viene vacio.
+        live_levels = oc.get_live_ask_levels(row["token_id"])
+        if live_levels is None:
+            row["fill_status"] = "SKIPPED_LIVE_BOOK_UNAVAILABLE"
+            row["reject_reason"] = (f"consulta directa al CLOB fallo o vino vacia "
+                                     f"(intento {attempt_n}/{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})")
+            break
+        live_status, _live_shares, _live_spent, live_vwap = _walk_live_levels(live_levels, amount_usd)
+        if live_vwap is None:
+            row["fill_status"] = "SKIPPED_LIVE_DEPTH_INSUFFICIENT"
+            row["reject_reason"] = (f"sin profundidad en vivo para ${amount_usd:.2f} "
+                                     f"(intento {attempt_n}/{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})")
+            break
 
-        row["shares_filled"] = shares_filled
-        row["avg_fill_price"] = avg_fill_price
-        row["tx_or_order_id"] = order_id or (tx_hashes[0] if tx_hashes else None)
-        row["fee_real_usd"] = None  # la API no informa fee por separado en las respuestas observadas -- nunca inventado
-        row["slippage_pct"] = ((avg_fill_price - max_price) / max_price) if avg_fill_price else None
+        # c) gate de slippage vs. la decision paper congelada -- si el book
+        # se alejo demasiado, NO se envia nada (no consume cupo de intentos
+        # reales) y se detiene esta oportunidad por completo.
+        if live_vwap > max_allowed_price:
+            row["fill_status"] = "SKIPPED_PRICE_MOVED_TOO_FAR"
+            row["reject_reason"] = (
+                f"precio ejecutable en vivo ${live_vwap:.4f} supera paper "
+                f"${row['paper_expected_price']:.4f} + ${cfg.MAX_PAPER_PRICE_SLIPPAGE} "
+                f"(intento {attempt_n}/{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET}, ninguna orden enviada)")
+            break
 
-        if shares_filled <= 0:
-            row["fill_status"] = "REJECTED"
-            row["reject_reason"] = f"orden colocada pero sin fill (status={status!r}, FAK sin fill)"
+        tick = meta.get("tick_size") or 0.01
+        submit_max_price = min(live_vwap + tick, max_allowed_price)
+        row["limit_price"] = submit_max_price
+
+        ks.record_attempt(state, amount_usd)  # a partir de aca SI cuenta como operacion intentada
+        sub = {"attempt_n": attempt_n, "live_executable_price": live_vwap,
+               "live_book_status": live_status, "max_price": submit_max_price,
+               "live_ask_levels": live_levels}
+        try:
+            resp, latency_ms = oc.place_fak_market_buy(client, row["token_id"], amount_usd, max_spend_usd, submit_max_price)
+            sub["latency_ms"] = latency_ms
+            sub["response"] = resp
+            row["latency_ms"] = latency_ms
+
+            making_amount = getattr(resp, "making_amount", None)   # USDC efectivamente gastado
+            taking_amount = getattr(resp, "taking_amount", None)   # shares efectivamente recibidas
+            status = getattr(resp, "status", None)
+            order_id = getattr(resp, "order_id", None)
+            tx_hashes = getattr(resp, "transactions_hashes", None)
+
+            spent = float(making_amount) if making_amount is not None else 0.0
+            shares_filled = float(taking_amount) if taking_amount is not None else 0.0
+            avg_fill_price = (spent / shares_filled) if shares_filled else None
+
+            row["shares_filled"] = shares_filled
+            row["avg_fill_price"] = avg_fill_price
+            row["tx_or_order_id"] = order_id or (tx_hashes[0] if tx_hashes else None)
+            row["fee_real_usd"] = None  # la API no informa fee por separado en las respuestas observadas -- nunca inventado
+            row["slippage_pct"] = ((avg_fill_price - submit_max_price) / submit_max_price) if avg_fill_price else None
+
+            if shares_filled <= 0:
+                row["fill_status"] = "REJECTED"
+                row["reject_reason"] = (f"orden colocada pero sin fill (status={status!r}, FAK sin fill, "
+                                         f"intento {attempt_n}/{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})")
+                success = False
+            elif spent >= amount_usd * 0.95:  # dentro del 95% del monto objetivo -- lleno para fines practicos
+                row["fill_status"] = "FILLED"
+                success = True
+            else:
+                row["fill_status"] = "PARTIAL"
+                row["reject_reason"] = f"fill parcial: ${spent:.4f} de ${amount_usd:.2f} objetivo"
+                success = True
+            ks.record_execution_outcome(state, success)
+            sub["fill_status"] = row["fill_status"]
+        except Exception as e:
+            row["fill_status"] = "ERROR"
+            row["error"] = str(e)
+            sub["error"] = str(e)
+            ks.record_execution_outcome(state, False)
             success = False
-        elif spent >= amount_usd * 0.95:  # dentro del 95% del monto objetivo -- lleno para fines practicos
-            row["fill_status"] = "FILLED"
-            success = True
-        else:
-            row["fill_status"] = "PARTIAL"
-            row["reject_reason"] = f"fill parcial: ${spent:.4f} de ${amount_usd:.2f} objetivo"
-            success = True
-        ks.record_execution_outcome(state, success)
-    except Exception as e:
-        row["fill_status"] = "ERROR"
-        row["error"] = str(e)
-        ks.record_execution_outcome(state, False)
-    return row, True
+
+        submissions.append(sub)
+        if success:
+            final_success = True
+            break
+        if state["kill_switch_tripped"]:
+            break
+        # sin fill -- si quedan intentos, se reintenta re-consultando el
+        # book en vivo (punto b) desde cero en la proxima vuelta.
+
+    row["api_request_json"] = _json.dumps({
+        "asset_id": row["token_id"], "side": "BUY", "amount": amount_usd, "max_spend": max_spend_usd,
+        "order_type": cfg.ORDER_TYPE, "max_paper_price_slippage": cfg.MAX_PAPER_PRICE_SLIPPAGE,
+        "max_live_submissions_per_market": cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})
+    row["api_response_json"] = _json.dumps({"submissions": submissions}, default=str)
+
+    if (not final_success and len(submissions) >= cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET
+            and row["fill_status"] in ("REJECTED", "ERROR")):
+        row["reject_reason"] = (
+            f"{row['reject_reason']} -- agotados los {cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET} "
+            f"intentos reales sin fill, deteniendo esta oportunidad")
+
+    # attempted=True solo si se envio al menos una orden REAL -- consistente
+    # con DRY_RUN (donde SKIPPED_KILL_SWITCH tambien devuelve False): un
+    # gate/kill-switch/book-en-vivo-no-disponible que impide cualquier envio
+    # no cuenta como "se intento".
+    return row, len(submissions) > 0
 
 
 def resolve_and_update_pnl(dconn, state):

@@ -45,6 +45,54 @@ sigue probando que ese paquete nunca puede ejecutar).
 | Cobertura | Ninguna | |
 | Universo | BTC/ETH/SOL, 5 minutos | |
 | **Parada automatica** | Tras el primer intento (cualquiera sea su resultado) | `STOP_AFTER_FIRST_ATTEMPT=True`, TEMPORAL -- el proceso se cierra solo, no queda corriendo indefinidamente |
+| Envios reales por oportunidad | Hasta 3 (`MAX_LIVE_SUBMISSIONS_PER_MARKET`) | Ver seccion "Reintentos LIVE" abajo. Cada envio sigue contando individualmente contra `MAX_ORDERS`/capital/fallos consecutivos -- mientras `MAX_ORDERS=1` (temporal, fila de arriba), en la practica esto sigue limitado a 1 envio real total por corrida. |
+| Slippage maximo vs. paper | $0.02 (`MAX_PAPER_PRICE_SLIPPAGE`) | Si el precio ejecutable del book EN VIVO para el monto completo supera `paper_expected_price + $0.02`, no se envia ninguna orden (no consume cupo de intentos) |
+
+## Reintentos LIVE contra el book en vivo (2026-09-17)
+
+Hasta esta version, el `max_price` de la orden LIVE salia del snapshot mas
+fresco guardado en `data.db` por el collector (aunque re-consultado "ahora",
+no anclado al instante de decision -- ver seccion siguiente). El unico
+intento real completado (2026-09-16, ver mas abajo) no tuvo match, y no se
+podia distinguir si fue por movimiento real del book o por vejez de la
+foto guardada.
+
+Cambio: cada envio REAL ahora re-consulta el order book del CLOB
+DIRECTAMENTE (`live_micro_favorite_order_client.get_live_ask_levels()`,
+lectura publica GET `/book?token_id=...`, sin credenciales) inmediatamente
+antes de enviar -- nunca usa `orderbook_levels` de `data.db` como cotizacion
+final de una orden LIVE (el snapshot de `data.db` se sigue usando solo para
+el gate de staleness inicial y como referencia auditable en
+`row["snapshot_id"]`/`depth_json`).
+
+Por cada mercado candidato, en `mode="LIVE"`:
+
+1. Se calcula el precio ejecutable del book EN VIVO para el monto completo
+   (`$2`, recorriendo los niveles ask devueltos por el CLOB).
+2. Si ese precio supera `paper_expected_price + $0.02`, **no se envia nada**
+   -- no consume uno de los 3 intentos, y se detiene esta oportunidad por
+   completo (no se sigue reintentando indefinidamente).
+3. Si esta dentro de tolerancia, se envia FAK con `max_price = min(precio
+   ejecutable en vivo + 1 tick, paper_expected_price + $0.02)`.
+4. Se detiene inmediatamente en el primer resultado `FILLED`/`PARTIAL`.
+5. Si el envio no tuvo match (`REJECTED`) o fallo (`ERROR`), se reintenta
+   -- re-consultando el book en vivo desde cero -- hasta un maximo de 3
+   envios reales. Al 3er intento sin fill, se detiene y queda registrado
+   `reject_reason` con "agotados los 3 intentos reales sin fill".
+
+Cada uno de esos hasta-3 envios reales pasa por el kill switch
+individualmente (`check_before_order`/`record_attempt`/
+`record_execution_outcome`), igual que antes -- ningun envio real se salta
+esa verificacion. `row["api_request_json"]`/`api_response_json"` en LIVE
+guardan la lista completa de intentos (precio en vivo consultado, max_price
+usado, respuesta cruda de cada uno), no solo el ultimo.
+
+Tests: `tests/test_live_micro_favorite.py`, seccion "LIVE: book en vivo +
+reintentos" -- cubren el uso del precio en vivo (no el de `data.db`), el
+gate de slippage sin consumir intento, los 3 reintentos con parada al
+agotarlos, la parada inmediata en el primer fill, que `MAX_ORDERS=1`
+(temporal) sigue limitando todo a 1 envio real, y que un book en vivo no
+disponible es fail-closed (no se envia nada).
 
 ## Verificacion del mecanismo de proteccion de precio real (2026-09-16)
 
@@ -194,7 +242,17 @@ DB separada (1), varios (2).
 ## Limitaciones conocidas
 
 - `get_market_meta()` es la unica llamada de red tambien en DRY_RUN
-  (lectura publica, sin credenciales).
+  (lectura publica, sin credenciales). `get_live_ask_levels()` (2026-09-17)
+  es otra lectura publica sin credenciales, pero SOLO se llama en LIVE --
+  DRY_RUN sigue sin tocar la red para precio/profundidad, usa exclusivamente
+  el snapshot de `data.db` (mismo motor que el paper validator).
+- El gate de slippage (`MAX_PAPER_PRICE_SLIPPAGE=$0.02`) y el reintento de
+  hasta 3 envios reales (`MAX_LIVE_SUBMISSIONS_PER_MARKET`) todavia NO
+  fueron probados contra un envio LIVE real -- solo contra tests unitarios
+  con respuestas simuladas. El unico envio real completado hasta ahora
+  (2026-09-16, seccion de abajo) fue con la logica VIEJA (snapshot de
+  `data.db`, un solo intento). Falta una nueva autorizacion explicita para
+  probar esta version contra la API real.
 - `polymarket-client==0.10.0` **no esta instalado en `collector/venv`**
   (el venv que ejecuta `run_live_micro_favorite.py`) -- solo se instalo en
   un venv desechable separado para la inspeccion de codigo. Intentar LIVE

@@ -33,6 +33,7 @@ de la orden firmada (EIP-712), no solo un chequeo previo del lado cliente.
 """
 import json
 import time
+import urllib.parse
 import urllib.request
 
 import live_micro_favorite_config as cfg
@@ -61,6 +62,31 @@ def get_market_meta(condition_id, timeout=8):
         "minimum_order_size": float(min_order_size) if min_order_size is not None else None,
         "raw": d,
     }
+
+
+def get_live_ask_levels(token_id, timeout=8):
+    """Lectura publica, sin credenciales, del order book REAL en el CLOB en
+    el instante del intento -- NO el snapshot guardado en data.db por el
+    collector (que puede tener hasta MAX_SNAPSHOT_AGE_S de antiguedad). Se
+    usa para calcular el precio limite de cada envio LIVE contra el book
+    actual. Devuelve niveles 'ask' como lista de {'price','size'} ordenada
+    por precio ascendente (mejor primero), o None si la consulta fallo o
+    el book vino vacio/invalido -- fail closed, el llamador debe tratarlo
+    como 'no operar', nunca asumir un precio."""
+    url = f"{cfg.HOST}/book?{urllib.parse.urlencode({'token_id': token_id})}"
+    try:
+        book = _http_get_json(url, timeout=timeout)
+    except Exception:
+        return None
+    asks = (book or {}).get("asks") or []
+    try:
+        levels = [{"price": float(a["price"]), "size": float(a["size"])} for a in asks]
+    except (KeyError, TypeError, ValueError):
+        return None
+    if not levels:
+        return None
+    levels.sort(key=lambda l: l["price"])
+    return levels
 
 
 def make_client():
