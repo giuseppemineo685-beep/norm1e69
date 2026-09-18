@@ -75,10 +75,24 @@ Por cada mercado candidato, en `mode="LIVE"`:
 3. Si esta dentro de tolerancia, se envia FAK con `max_price = min(precio
    ejecutable en vivo + 1 tick, paper_expected_price + $0.02)`.
 4. Se detiene inmediatamente en el primer resultado `FILLED`/`PARTIAL`.
-5. Si el envio no tuvo match (`REJECTED`) o fallo (`ERROR`), se reintenta
-   -- re-consultando el book en vivo desde cero -- hasta un maximo de 3
-   envios reales. Al 3er intento sin fill, se detiene y queda registrado
-   `reject_reason` con "agotados los 3 intentos reales sin fill".
+5. Si el envio recibio una respuesta LIMPIA de la API sin match
+   (`REJECTED` confirmado -- sabemos con certeza que no se lleno), se
+   reintenta -- re-consultando el book en vivo desde cero -- hasta un
+   maximo de 3 envios reales. Al 3er intento sin fill, se detiene y queda
+   registrado `reject_reason` con "agotados los 3 intentos reales sin fill".
+6. Si el envio termino en una EXCEPCION (timeout, conexion cortada,
+   respuesta malformada -- `ERROR`, corregido 2026-09-17 tras la auditoria
+   de `a87f8e5..4e48fdd`, hallazgo #10), el resultado real es DESCONOCIDO
+   -- no sabemos si esa orden se envio o incluso se lleno del lado del
+   exchange. Este caso **nunca reintenta automaticamente**, sin importar
+   cuantos de los 3 intentos queden: reintentar ahi podria mandar una
+   segunda orden real mientras la primera sigue con destino desconocido
+   (doble gasto real). Se detiene la oportunidad, `reject_reason` queda con
+   "resultado DESCONOCIDO tras excepcion... requiere revision manual", y
+   `submissions[-1]["outcome_uncertain"]=True` en `api_response_json`.
+   Antes de este fix, un `ERROR` se trataba igual que un `REJECTED`
+   confirmado y SI reintentaba -- ver Tests, `test_live_exception_during_
+   submission_never_retries_outcome_unknown`.
 
 Cada uno de esos hasta-3 envios reales pasa por el kill switch
 individualmente (`check_before_order`/`record_attempt`/

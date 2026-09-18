@@ -484,6 +484,67 @@ def test_live_temporary_max_orders_of_1_still_caps_retries_to_one_real_submissio
     assert state["n_orders_attempted"] == 1
 
 
+def test_live_exception_during_submission_never_retries_outcome_unknown(monkeypatch):
+    """Auditoria 2026-09-17, hallazgo #10: una excepcion (timeout, conexion
+    cortada) durante place_fak_market_buy NO confirma que la orden no se
+    envio/lleno -- reintentar en ese caso podria duplicar un envio real. El
+    loop debe detenerse INMEDIATAMENTE tras la excepcion, sin importar
+    cuantos intentos queden ni el estado del kill switch."""
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(cfg, "MAX_ORDERS", 10)             # deliberadamente alto: si el bug reapareciera, reintentaria
+    monkeypatch.setattr(cfg, "MAX_CAPITAL_DEPLOYED_USD", 20.0)
+    monkeypatch.setattr(cfg, "MAX_CONSECUTIVE_FAILURES", 10)  # que no sea el kill switch el que corte el loop
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.70, "size": 100}])
+    calls = {"n": 0}
+
+    def _fake_submit(client, token_id, amount, max_spend, max_price):
+        calls["n"] += 1
+        raise TimeoutError("connection reset by peer")
+    monkeypatch.setattr(oc, "place_fak_market_buy", _fake_submit)
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert calls["n"] == 1                       # NUNCA un segundo intento tras la excepcion
+    assert not state["kill_switch_tripped"]       # confirma que no fue el kill switch quien freno el loop
+    assert row["fill_status"] == "ERROR"
+    assert "DESCONOCIDO" in row["reject_reason"]
+    assert "agotados" not in row["reject_reason"]  # no es agotamiento de intentos, es resultado incierto
+    subs = json.loads(row["api_response_json"])["submissions"]
+    assert len(subs) == 1
+    assert subs[0]["outcome_uncertain"] is True
+
+
+def test_live_confirmed_rejection_still_retries_normally(monkeypatch):
+    """Contraste con el test anterior: un REJECTED limpio (respuesta valida
+    de la API, sin fill) SI debe seguir permitiendo reintentos -- el fix
+    solo afecta el camino de excepcion/resultado desconocido."""
+    import live_micro_favorite_config as cfg
+    import live_micro_favorite_executor as ex
+    import live_micro_favorite_order_client as oc
+    monkeypatch.setattr(cfg, "LIVE_MICRO_FAVORITE_ENABLED", True)
+    monkeypatch.setattr(cfg, "MAX_ORDERS", 10)
+    monkeypatch.setattr(cfg, "MAX_CAPITAL_DEPLOYED_USD", 20.0)
+    monkeypatch.setattr(oc, "get_market_meta", lambda cid, timeout=8: _live_ok_meta())
+    monkeypatch.setattr(oc, "get_live_ask_levels", lambda token_id: [{"price": 0.70, "size": 100}])
+    monkeypatch.setattr(oc, "place_fak_market_buy",
+        lambda client, token_id, amount, max_spend, max_price: (
+            _FakeResp(making_amount=0.0, taking_amount=0.0, status="unmatched"), 10.0))
+
+    dconn, m, now_wall_clock, state = _build_scenario(up_ask=0.70, down_ask=0.30)
+    row, attempted = ex.build_attempt(dconn, m, now_wall_clock, state, "LIVE", client=object())
+
+    assert row["fill_status"] == "REJECTED"
+    assert "agotados los 3" in row["reject_reason"]
+    subs = json.loads(row["api_response_json"])["submissions"]
+    assert len(subs) == 3
+    assert all(not s.get("outcome_uncertain") for s in subs)
+
+
 def test_live_book_unavailable_is_fail_closed_no_submission(monkeypatch):
     import live_micro_favorite_config as cfg
     import live_micro_favorite_executor as ex

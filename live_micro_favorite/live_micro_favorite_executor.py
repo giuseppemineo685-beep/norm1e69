@@ -330,21 +330,43 @@ def build_attempt(dconn, m, now_wall_clock, state, mode, client=None):
                 success = True
             ks.record_execution_outcome(state, success)
             sub["fill_status"] = row["fill_status"]
+            submissions.append(sub)
+            if success:
+                final_success = True
+                break
+            if state["kill_switch_tripped"]:
+                break
+            # REJECTED confirmado por una respuesta limpia de la API (sin
+            # fill, pero SABEMOS que no se lleno) -- unico caso seguro para
+            # reintentar. Si quedan intentos, se reintenta re-consultando el
+            # book en vivo (punto b) desde cero en la proxima vuelta.
         except Exception as e:
+            # Auditoria 2026-09-17 (a87f8e5..4e48fdd, hallazgo #10): una
+            # excepcion aca (timeout, conexion cortada, respuesta
+            # malformada) NO nos dice si la orden realmente se envio o
+            # incluso se lleno del lado del exchange -- solo que NOSOTROS
+            # no pudimos confirmarlo. Reintentar en ese caso podria mandar
+            # una SEGUNDA orden real mientras la primera sigue con destino
+            # desconocido (doble gasto real, hasta 2x MAX_ORDER_USD). Por
+            # eso esto SIEMPRE detiene la oportunidad por completo -- nunca
+            # reintenta automaticamente tras una excepcion, a diferencia de
+            # un REJECTED confirmado (rama de arriba). Requiere revision
+            # manual (balance/posiciones reales) antes de cualquier intento
+            # nuevo sobre este mismo mercado.
             row["fill_status"] = "ERROR"
             row["error"] = str(e)
+            row["reject_reason"] = (
+                f"resultado DESCONOCIDO tras excepcion en el intento {attempt_n}/"
+                f"{cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET} ({e!r}) -- no se puede confirmar si la orden se "
+                f"envio o se lleno del lado del exchange, asi que NO se reintenta automaticamente (evita "
+                f"un posible doble envio real). Revisar balance/posiciones manualmente antes de cualquier "
+                f"intento nuevo sobre este mercado.")
             sub["error"] = str(e)
+            sub["fill_status"] = "ERROR"
+            sub["outcome_uncertain"] = True
             ks.record_execution_outcome(state, False)
-            success = False
-
-        submissions.append(sub)
-        if success:
-            final_success = True
-            break
-        if state["kill_switch_tripped"]:
-            break
-        # sin fill -- si quedan intentos, se reintenta re-consultando el
-        # book en vivo (punto b) desde cero en la proxima vuelta.
+            submissions.append(sub)
+            break  # NUNCA reintentar tras una excepcion -- el resultado real es desconocido
 
     row["api_request_json"] = _json.dumps({
         "asset_id": row["token_id"], "side": "BUY", "amount": amount_usd, "max_spend": max_spend_usd,
@@ -352,8 +374,14 @@ def build_attempt(dconn, m, now_wall_clock, state, mode, client=None):
         "max_live_submissions_per_market": cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET})
     row["api_response_json"] = _json.dumps({"submissions": submissions}, default=str)
 
-    if (not final_success and len(submissions) >= cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET
+    last_sub_uncertain = bool(submissions) and submissions[-1].get("outcome_uncertain")
+    if (not final_success and not last_sub_uncertain
+            and len(submissions) >= cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET
             and row["fill_status"] in ("REJECTED", "ERROR")):
+        # Solo aplica cuando se agotaron los 3 intentos con resultados
+        # CONFIRMADOS (REJECTED limpio) -- un ultimo intento con resultado
+        # incierto ya trae su propio reject_reason ("resultado DESCONOCIDO
+        # tras excepcion...") y no debe pisarse con este mensaje generico.
         row["reject_reason"] = (
             f"{row['reject_reason']} -- agotados los {cfg.MAX_LIVE_SUBMISSIONS_PER_MARKET} "
             f"intentos reales sin fill, deteniendo esta oportunidad")
