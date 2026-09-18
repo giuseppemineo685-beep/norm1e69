@@ -1,0 +1,37 @@
+# Cheap keyword prefilter, applied before any API call.
+# A posting must contain at least one `include` word in title or description,
+# none of the `exclude` words in the title, and one of the `locations`
+# (or be remote when remote_ok is true). Matching ignores case.
+filter:
+  include:
+    - strategy
+    - portfolio
+    - product manager
+    - business analyst
+    - operations
+    - project manager
+    - consultant
+  exclude:
+    - intern
+    - internship
+    - werkstudent
+    - apprentice
+    - lehre
+  locations:
+    - zurich
+    - zürich
+    - zug
+    - switzerland
+    - schweiz
+  remote_ok: true
+
+# Postings scoring below this are hidden (status "filtered") to keep the daily list short.
+min_score: 50
+
+# Job alert emails read through Gmail. Set up the alerts on each site with the
+# searches you want (title keywords + Zurich); LinkedIn, jobs.ch and jobup.ch
+# all send daily digests. `query` is normal Gmail search syntax.
+alerts:
+  enabled: true
+  query: 'newer_than:2d (from:jobalerts-noreply@linkedin.com OR from:jobs-listings@linkedin.com OR from:jobs.ch OR from:jobup.ch OR from:indeed.com)'
+  max_messages: 50

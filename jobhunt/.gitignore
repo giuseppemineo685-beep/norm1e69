@@ -1,0 +1,11 @@
+data/*
+!data/sample_jobs.json
+token.json
+client_secret.json
+.env
+__pycache__/
+.pytest_cache/
+web/node_modules/
+web/.next/
+web/.env.local
+web/tsconfig.tsbuildinfo

@@ -1,0 +1,310 @@
+{
+ "jobs": {
+  "7ac3fab85e21652f": {
+   "source": "greenhouse",
+   "company": "Zurich Insurance",
+   "title": "Strategy Manager, Group Strategy",
+   "url": "https://www.zurich.com/careers/job/strategy-manager-1",
+   "location": "Zurich, Switzerland",
+   "external_id": null,
+   "posted_at": "2026-09-17",
+   "jd": "We look for a Strategy Manager to support the Group Strategy team.\n\n- 5+ years in strategy consulting or corporate strategy\n- Strong financial modelling\n- Fluent English, German a plus\n- Experience in insurance or financial services",
+   "raw": {},
+   "id": "7ac3fab85e21652f",
+   "status": "pending",
+   "score": 86,
+   "reasons": {
+    "matching": [
+     "6 anos en estrategia y consultoria",
+     "Financial modelling",
+     "Clientes de seguros y banca",
+     "Ingles C2"
+    ],
+    "missing": [
+     "Aleman solo B1"
+    ],
+    "summary": "Encaje alto. Piden consultoria en seguros y modelling financiero, justo tu perfil.",
+    "seniority_ok": true,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-17T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": null,
+   "drive_url": null,
+   "error": null
+  },
+  "562a990e6d4b786d": {
+   "source": "gmail:linkedin",
+   "company": "UBS",
+   "title": "Portfolio Manager, Change Portfolio",
+   "url": "https://www.linkedin.com/jobs/view/4098765432/",
+   "location": "Zurich, Switzerland (Hybrid)",
+   "external_id": null,
+   "posted_at": "2026-09-17",
+   "jd": "Manage the change portfolio for the Swiss business unit. Prioritise initiatives, run the portfolio board, report to the COO.\n\n- PMP or equivalent\n- 5 years in portfolio or programme management\n- Banking experience preferred",
+   "raw": {},
+   "id": "562a990e6d4b786d",
+   "status": "pending",
+   "score": 78,
+   "reasons": {
+    "matching": [
+     "PMP",
+     "Portfolio prioritisation",
+     "Stakeholder management con C-level"
+    ],
+    "missing": [
+     "Experiencia directa en banca limitada a proyectos de cliente"
+    ],
+    "summary": "Buen encaje en portfolio. La parte de banca la cubres desde consultoria.",
+    "seniority_ok": true,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-16T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": null,
+   "drive_url": null,
+   "error": null
+  },
+  "8a29386dc0bfe76e": {
+   "source": "gmail:jobs.ch",
+   "company": "Swisscom",
+   "title": "Business Analyst Operations",
+   "url": "https://www.jobs.ch/en/vacancies/detail/0a1b2c3d-4e5f-6789-abcd-ef0123456789/",
+   "location": "Zurich",
+   "external_id": null,
+   "posted_at": "2026-09-16",
+   "jd": "Analyse operational processes, build dashboards in Power BI, support the operations lead.\n\n- 3 years as business analyst\n- Power BI, SQL\n- German C1 required",
+   "raw": {},
+   "id": "8a29386dc0bfe76e",
+   "status": "pending",
+   "score": 54,
+   "reasons": {
+    "matching": [
+     "Power BI",
+     "SQL basico",
+     "Business analyst en Empresa Y"
+    ],
+    "missing": [
+     "Aleman C1 requerido, tienes B1",
+     "Rol mas junior que tu nivel actual"
+    ],
+    "summary": "Encaje medio. El aleman C1 es un requisito duro.",
+    "seniority_ok": false,
+    "language_ok": false
+   },
+   "first_seen": "2026-09-15T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": null,
+   "drive_url": null,
+   "error": null
+  },
+  "9c6697d07ba2e9f1": {
+   "source": "ashby",
+   "company": "Notion",
+   "title": "Strategy & Operations Lead, EMEA",
+   "url": "https://jobs.ashbyhq.com/notion/strategy-ops-emea",
+   "location": "Remote, Europe",
+   "external_id": null,
+   "posted_at": "2026-09-15",
+   "jd": "Own strategic projects for the EMEA GM. Build business cases, run planning cycles.\n\n- 5+ years consulting or strategy ops at a tech company\n- Comfortable with SQL",
+   "raw": {},
+   "id": "9c6697d07ba2e9f1",
+   "status": "pending",
+   "score": 72,
+   "reasons": {
+    "matching": [
+     "Business cases",
+     "Consultoria 6 anos",
+     "Remoto en Europa"
+    ],
+    "missing": [
+     "Sin experiencia previa en tech"
+    ],
+    "summary": "Encaje bueno para un salto a tech, remoto.",
+    "seniority_ok": true,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-14T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": null,
+   "drive_url": null,
+   "error": null
+  },
+  "d4e667059a6c1dee": {
+   "source": "workday",
+   "company": "Swiss Re",
+   "title": "Senior Project Manager, Transformation",
+   "url": "https://swissre.wd3.myworkdayjobs.com/External/job/Zurich/Senior-Project-Manager_R1234",
+   "location": "Zurich",
+   "external_id": null,
+   "posted_at": "2026-09-12",
+   "jd": "Lead transformation projects across underwriting. PMP, Agile, 6+ years.",
+   "raw": {},
+   "id": "d4e667059a6c1dee",
+   "status": "accepted",
+   "score": 81,
+   "reasons": {
+    "matching": [
+     "Programa de transformacion 4 MCHF",
+     "PMP y Agile",
+     "Seguros"
+    ],
+    "missing": [],
+    "summary": "Muy parecido a tu rol actual.",
+    "seniority_ok": true,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-13T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": "2026-09-17T09:12:00+00:00",
+   "drive_url": null,
+   "error": null
+  },
+  "5bcf56de71e18c97": {
+   "source": "greenhouse",
+   "company": "Stripe",
+   "title": "Strategy Associate",
+   "url": "https://stripe.com/jobs/listing/strategy-associate/1",
+   "location": "Dublin",
+   "external_id": null,
+   "posted_at": "2026-09-10",
+   "jd": "Support the CFO office.",
+   "raw": {},
+   "id": "5bcf56de71e18c97",
+   "status": "discarded",
+   "score": 41,
+   "reasons": {
+    "matching": [
+     "Strategy"
+    ],
+    "missing": [
+     "Dublin, no Zurich",
+     "Nivel associate"
+    ],
+    "summary": "Demasiado junior y fuera de Zurich.",
+    "seniority_ok": false,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-12T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": "2026-09-16T08:00:00+00:00",
+   "drive_url": null,
+   "error": null
+  },
+  "af0a4398020dd017": {
+   "source": "lever",
+   "company": "Sunrise",
+   "title": "Head of Portfolio Management",
+   "url": "https://jobs.lever.co/sunrise/portfolio-head",
+   "location": "Zurich",
+   "external_id": null,
+   "posted_at": "2026-09-08",
+   "jd": "Lead the portfolio office of 6 people.",
+   "raw": {},
+   "id": "af0a4398020dd017",
+   "status": "ready",
+   "score": 69,
+   "reasons": {
+    "matching": [
+     "Portfolio",
+     "Coordina equipo de 5"
+    ],
+    "missing": [
+     "Primer rol de management"
+    ],
+    "summary": "Un paso arriba, vale la pena.",
+    "seniority_ok": true,
+    "language_ok": true,
+    "changes": [
+     "Summary reescrito hacia portfolio",
+     "Skills reordenadas"
+    ]
+   },
+   "first_seen": "2026-09-11T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": "2026-09-14T10:00:00+00:00",
+   "drive_url": "https://drive.google.com/drive/folders/EXAMPLE",
+   "error": null
+  },
+  "a4097d5cb5a41d06": {
+   "source": "gmail:linkedin",
+   "company": "Google",
+   "title": "Program Manager, Cloud Operations",
+   "url": "https://www.linkedin.com/jobs/view/4011111111/",
+   "location": "Zurich",
+   "external_id": null,
+   "posted_at": "2026-09-05",
+   "jd": "Run cross-functional programs.",
+   "raw": {},
+   "id": "a4097d5cb5a41d06",
+   "status": "applied",
+   "score": 66,
+   "reasons": {
+    "matching": [
+     "Project management"
+    ],
+    "missing": [
+     "Cloud"
+    ],
+    "summary": "Encaje medio alto.",
+    "seniority_ok": true,
+    "language_ok": true
+   },
+   "first_seen": "2026-09-10T06:00:00+00:00",
+   "last_seen": "2026-09-18T06:00:00+00:00",
+   "decided_at": "2026-09-10T10:00:00+00:00",
+   "drive_url": "https://drive.google.com/drive/folders/EXAMPLE2",
+   "error": null
+  }
+ },
+ "runs": [
+  {
+   "at": "2026-09-18T05:00:00+00:00",
+   "kind": "scrape",
+   "source": "greenhouse:Zurich Insurance",
+   "found": 42,
+   "new": 1,
+   "error": ""
+  },
+  {
+   "at": "2026-09-18T05:00:05+00:00",
+   "kind": "scrape",
+   "source": "gmail",
+   "found": 23,
+   "new": 4,
+   "error": ""
+  },
+  {
+   "at": "2026-09-18T05:00:09+00:00",
+   "kind": "scrape",
+   "source": "workday:Swiss Re",
+   "found": 0,
+   "new": 0,
+   "error": "403 Forbidden"
+  },
+  {
+   "at": "2026-09-18T05:00:20+00:00",
+   "kind": "scrape",
+   "source": "total",
+   "found": 118,
+   "new": 5,
+   "error": ""
+  },
+  {
+   "at": "2026-09-17T05:00:20+00:00",
+   "kind": "scrape",
+   "source": "total",
+   "found": 110,
+   "new": 9,
+   "error": ""
+  },
+  {
+   "at": "2026-09-16T05:00:20+00:00",
+   "kind": "scrape",
+   "source": "total",
+   "found": 104,
+   "new": 7,
+   "error": ""
+  }
+ ]
+}

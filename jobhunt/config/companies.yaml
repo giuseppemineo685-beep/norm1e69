@@ -1,0 +1,36 @@
+# Companies whose career pages are checked every day.
+# type decides how the page is read:
+#   greenhouse       slug from https://boards.greenhouse.io/<slug>
+#   lever            slug from https://jobs.lever.co/<slug>
+#   smartrecruiters  company id from https://jobs.smartrecruiters.com/<id>
+#   ashby            slug from https://jobs.ashbyhq.com/<slug>
+#   workday          tenant + host + site from the career URL
+#   html             any page: link_pattern selects the posting links
+#
+# Replace these examples with your own list.
+companies:
+  - name: Stripe
+    type: greenhouse
+    slug: stripe
+  - name: Scale AI
+    type: greenhouse
+    slug: scaleai
+  - name: Anthropic
+    type: greenhouse
+    slug: anthropic
+  - name: Notion
+    type: ashby
+    slug: notion
+  - name: Linear
+    type: ashby
+    slug: linear
+  - name: Swiss Re
+    type: workday
+    tenant: swissre
+    host: swissre.wd3.myworkdayjobs.com
+    site: External
+    search: "Zurich"
+  - name: Sunrise
+    type: html
+    url: https://www.sunrise.ch/en/company/career/jobs
+    link_pattern: "/jobs/"
